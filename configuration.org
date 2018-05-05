@@ -44,7 +44,6 @@ down in this file, some are used with the default configuration.
 #+BEGIN_SRC emacs-lisp
 
   (defvar my-packages '(ag
-                        beacon
                         browse-kill-ring
                         flycheck
                         auto-complete
@@ -255,13 +254,6 @@ when connecting to an FTP, try to revert to active mode.
 * General
 This section contains settings for non-built-in Emacs features that
 are generally applicable to different kinds of modes.
-** =beacon-mode=
-https://github.com/Malabarba/beacon
-
-Whenever the window scrolls a light will shine on top of your cursor so you know where it is.
-#+BEGIN_SRC emacs-lisp
-(beacon-mode 1)
-#+END_SRC
 ** =browse-kill-ring=
 Ever wish you could just look through everything you've killed
 recently to find out if you killed that piece of text that you think
