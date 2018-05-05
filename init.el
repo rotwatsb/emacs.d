@@ -1,4 +1,4 @@
-;;; package --- Alain M. Lafon <alain@200ok.ch> Emacs config
+;;; package --- Steve Bradley <stevebradley@gmail.com> Emacs config
 ;;; Commentary:
 ;;   - All of the configuration is within `configuration.org`
 ;;; Code:
