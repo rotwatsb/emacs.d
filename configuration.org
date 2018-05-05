@@ -747,19 +747,6 @@ on-demand and stored in memory.
 PDF Tools for me is - hands down - the best PDF viewer! It's not an
 excuse to do even more within Emacs.
 
-** Configuration
-
-When using =evil-mode= and =pdf-tools= and looking at a zoomed PDF, it
-will blink, because the cursor blinks. This configuration disables
-this whilst retaining the blinking cursor in other modes.
-
-#+BEGIN_SRC emacs-lisp
-(evil-set-initial-state 'pdf-view-mode 'emacs)
-(add-hook 'pdf-view-mode-hook
-  (lambda ()
-    (set (make-local-variable 'evil-emacs-state-cursor) (list nil))))
-#+END_SRC
-
 * Write Quality
 
 ** =writegood-mode=
@@ -828,30 +815,6 @@ having to recheck the whole buffer).
 
 * OS Specific
 ** Linux
-
-"Fira Code Retina" as default font. Get it via the =fonts-firacode=
-Debian package.
-
-#+BEGIN_SRC emacs-lisp
-
-  (when (eq system-type 'gnu/linux)
-    (set-frame-font "Fira Code Retina 15")
-    ;; Default Browser
-    (setq browse-url-browser-function 'browse-url-generic
-          browse-url-generic-program "chromium")
-    (menu-bar-mode -1)
-    ;; enable pdf-tools
-    (pdf-tools-install))
-
-#+END_SRC
-
 ** macOS
-
-#+BEGIN_SRC emacs-lisp
-(when (eq system-type 'darwin)
-  (set-frame-font "Menlo 14")
-  ; Use Spotlight to search with M-x locate
-  (setq locate-command "mdfind"))
-#+END_SRC
 
 
