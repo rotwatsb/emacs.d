@@ -62,7 +62,6 @@ down in this file, some are used with the default configuration.
                         tern-auto-complete
                         projectile
                         markdown-mode
-                        smex
                         restclient
                         magit
                         which-key
@@ -227,10 +226,10 @@ But getting back to a delicate WindowConfiguration is difficult. This
 is where Winner Mode comes in: With it, going back to a previous
 session is easy.
 ** Bell
-   Do not ring the system bell, but show a visible feedback.
+   Do not ring the system bell or show a visible feedback.
 
 #+BEGIN_SRC emacs-lisp
-(setq visible-bell t)
+(setq ring-bell-function 'ignore)
 #+END_SRC
 ** AngeFtp
 Try to use passive mode for FTP.
@@ -284,16 +283,6 @@ everywhere.
   (global-set-key (kbd "C-x C-b") 'ibuffer)
 #+END_SRC
 
-** Use =smex= as M-X enhancement
-Smex is a M-x enhancement for Emacs. Built on top of Ido, it provides
-a convenient interface to your recently and most frequently used
-commands. And to all the other commands, too.
-
-#+BEGIN_SRC emacs-lisp
-  (smex-initialize)
-  (global-set-key (kbd "M-x") 'smex)
-  (global-set-key (kbd "M-X") 'smex-major-mode-commands)
-#+END_SRC
 * Search
 
 Replace i-search-(forward|backward) with their respective regexp
