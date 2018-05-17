@@ -231,6 +231,7 @@ session is easy.
 #+BEGIN_SRC emacs-lisp
 (setq ring-bell-function 'ignore)
 #+END_SRC
+
 ** AngeFtp
 Try to use passive mode for FTP.
 

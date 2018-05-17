@@ -1,34 +1,5 @@
 #+TITLE: Setup Emacs
 
 * Tasks
-** TODO Fugitive
-** TODO file-line
-** DONE minibufexpl
-** DONE ctrlp
-** DONE color scheme solarized bright/dark
-** DONE Powerline
-** TODO RailsVim
-** TODO Rspec
-** TODO Rspec
-** DONE Spell checking
+** TODO Remove smex
 
-** Map Leader
-*** DONE Basic Install
-*** TODO All map leader settings from vimrc
-
-** Syntax Checking
-*** DONE Ruby
-*** DONE JS
-*** DONE Clojure
-*** DONE Markdown
-
-** Emacs specific
-*** TODO expand-region mode
-*** DONE Clojure integration
-*** DONE ClojureScript integration
-    
-** Less Important
-*** DONE Text Bubbling
-*** DONE Task List
-*** TODO Auto delete trailing white space
-*** DONE Jump to last open position when opening a file
