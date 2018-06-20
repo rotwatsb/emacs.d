@@ -706,7 +706,7 @@ Allow ‘a.’, ‘A.’, ‘a)’ and ‘A) as list elements:
 	       "\\documentclass{tufte-handout}
 \\usepackage{color}
 \\usepackage{amssymb}
-\\usepackage{amsmath}
+\\usepackage{amsmath}n
 \\usepackage{gensymb}
 \\usepackage{nicefrac}
 \\usepackage{units}"
@@ -820,5 +820,6 @@ having to recheck the whole buffer).
 * OS Specific
 ** Linux
 ** macOS
-
-
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "<f11>") 'toggle-frame-fullscreen)
+#+END_SRC
