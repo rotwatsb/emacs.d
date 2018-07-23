@@ -418,6 +418,24 @@ line break.
                                     (delete-trailing-whitespace)))))
 #+END_SRC
 
+*** Compilation Mode
+Tell compilation mode how to parse node stacktrace.
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook
+   'compilation-mode-hook
+   (lambda ()
+     (progn
+       (setq compilation-error-regexp-alist-alist
+             (cons '(node "^[  ]+at \\(?:[^\(\n]+ \(\\)?\\([a-zA-Z\.0-9_/-]+\\):\\([0-9]+\\):\\([0-9]+\\)\)?$"
+                          1 ;; file
+                          2 ;; line
+                          3 ;; column
+                          )
+                   compilation-error-regexp-alist-alist))
+       (setq compilation-error-regexp-alist
+             (cons 'node compilation-error-regexp-alist)))))
+#+END_SRC
 ** JavaScript
 *** =js2-mode= and =tern=
 
@@ -654,6 +672,14 @@ files.
   (advice-add 'projectile-find-implementation-or-test :around #'cache-impl-test-files)
 #+END_SRC
 
+#+BEGIN_SRC emacs-lisp
+(defun projectile-nodeunit-test-file ()
+  "Run test command on a single file"
+  (interactive)
+  (let ((command (concat "NODE_ENV=test ALLOW_CONFIG_MUTATIONS=y node_modules/nodeunit/bin/nodeunit " (buffer-file-name)))
+        (default-directory (projectile-compilation-dir)))
+    (compile command)))
+#+END_SRC
 ** Rust
 
 *** Flycheck rust
