@@ -50,7 +50,6 @@ down in this file, some are used with the default configuration.
                         web-mode
                         exec-path-from-shell
                         js2-mode
-                        js2-refactor
                         rainbow-mode
                         ini-mode
                         comment-tags
@@ -62,6 +61,7 @@ down in this file, some are used with the default configuration.
                         tern-auto-complete
                         projectile
                         markdown-mode
+                        raml-mode
                         restclient
                         rust-mode
                         magit
@@ -475,7 +475,7 @@ directory.
 
 My =~/.tern-config= file looks like this:
 
-#+BEGIN_SRC
+#+BEGIN_EXAMPLE
 {
   "libs": [
     "browser"
@@ -485,7 +485,7 @@ My =~/.tern-config= file looks like this:
     "node": {}
   }
 }
-#+END_SRC
+#+END_EXAMPLE
 
 [[http://ternjs.net/doc/manual.html#configuration][Here]] is more documentation on how to configure a Tern project.
 
@@ -510,26 +510,17 @@ Tern shortcuts:
 
 #+END_SRC
 
-*** =js2-refactor=
-https://github.com/magnars/js2-refactor.el
-
-A JavaScript refactoring library for Emacs.
-
-#+BEGIN_SRC emacs-lisp
-(add-hook 'js2-mode-hook #'js2-refactor-mode)
-(js2r-add-keybindings-with-prefix "C-c C-m")
-#+END_SRC
 *** General JavaScript configuration
 
 #+BEGIN_SRC emacs-lisp
 
   (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 
-  (add-hook 'js-mode-hook 'js2-minor-mode)
-  (setq js2-highlight-level 3)
+  ;; (add-hook 'js-mode-hook 'js2-minor-mode)
+  ;; (setq js2-highlight-level 3)
   (setq js-indent-level 4)
   ;; Semicolons are optional in JS, do not warn about them missing
-  (setq js2-strict-missing-semi-warning nil)
+  ;; (setq js2-strict-missing-semi-warning nil)
 
 #+END_SRC
 
