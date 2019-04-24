@@ -61,7 +61,6 @@ down in this file, some are used with the default configuration.
                         tern-auto-complete
                         projectile
                         markdown-mode
-                        raml-mode
                         restclient
                         rust-mode
                         magit
