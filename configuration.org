@@ -23,7 +23,6 @@ package-refresh-contents= and install everything using =M-x
 eval-buffer=.
 
 * Dependency management
-
 ** Define package repositories (archives)
 
 #+BEGIN_SRC emacs-lisp
@@ -42,7 +41,6 @@ down in this file, some are used with the default configuration.
 #+BEGIN_SRC emacs-lisp
 
   (defvar my-packages '(ag
-                        browse-kill-ring
                         flycheck
                         flycheck-rust
                         flx-ido
@@ -51,7 +49,6 @@ down in this file, some are used with the default configuration.
                         exec-path-from-shell
                         js2-mode
                         rainbow-mode
-                        ini-mode
                         comment-tags
                         sass-mode
                         pug-mode
@@ -61,13 +58,10 @@ down in this file, some are used with the default configuration.
                         tern-auto-complete
                         projectile
                         markdown-mode
-                        restclient
                         rust-mode
                         magit
                         which-key
-                        git-link
-                        writeroom-mode
-                        writegood-mode))
+                        git-link))
 #+END_SRC
 
 ** Install packages
@@ -251,24 +245,6 @@ when connecting to an FTP, try to revert to active mode.
 (setq custom-file "~/.emacs.d/custom-settings.el")
 (load custom-file t)
 #+END_SRC
-* General
-This section contains settings for non-built-in Emacs features that
-are generally applicable to different kinds of modes.
-** =browse-kill-ring=
-Ever wish you could just look through everything you've killed
-recently to find out if you killed that piece of text that you think
-you killed (or yanked), but you're not quite sure? If so, then
-browse-kill-ring is the Emacs extension for you.
-
-#+BEGIN_SRC emacs-lisp
-  (require 'browse-kill-ring)
-  (setq browse-kill-ring-highlight-inserted-item t
-        browse-kill-ring-highlight-current-entry nil
-        browse-kill-ring-show-preview t)
-  (define-key browse-kill-ring-mode-map (kbd "j") 'browse-kill-ring-forward)
-  (define-key browse-kill-ring-mode-map (kbd "k") 'browse-kill-ring-previous)
-#+END_SRC
-
 * ido-mode
 
 =ido= means "Interactively Do Things"
@@ -574,17 +550,6 @@ web-mode.el is an autonomous major-mode for editing web templates.
     '(("html" . (ac-source-words-in-buffer ac-source-abbrev))))
 #+END_SRC
 
-** p_slides
-
-[[https://github.com/munen/p_slides][p_slides]] is a static files only, dead simple way, to create semantic
-slides. The slide content is markdown, embedded in a HTML file. When
-opening a =presentation.html= file, enable =markdown-mode=.
-
-#+BEGIN_SRC emacs-lisp
-  (add-to-list 'auto-mode-alist '("presentation.html" . markdown-mode))
-  (add-hook 'markdown-mode-hook 'flyspell-mode)
-#+END_SRC
-
 ** yaml
 
 #+BEGIN_SRC emacs-lisp
@@ -608,6 +573,12 @@ Create shortcut for =Magit=.
 
 #+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "C-x g") 'magit-status)
+#+END_SRC
+
+Disable default emacs version control system
+
+#+BEGIN_SRC emacs-lip
+  (setq vc-handled-backends nil)
 #+END_SRC
 
 ** git-link
@@ -796,72 +767,6 @@ on-demand and stored in memory.
 
 PDF Tools for me is - hands down - the best PDF viewer! It's not an
 excuse to do even more within Emacs.
-
-* Write Quality
-
-** =writegood-mode=
-https://github.com/bnbeckwith/writegood-mode
-
-This is a minor mode to aid in finding common writing problems.
-
-It highlights text based on a set of weasel-words, passive-voice and
-duplicate words.
-
-** Flyspell
-
-Flyspell is a built-in minor mode for on-the-fly spell checking.
-
-Flyspell uses ispell or aspell in the background. I'm using the
-default (ispell) and have installed a German dictionary from [[http://fmg-www.cs.ucla.edu/geoff/ispell-dictionaries.html#German-dicts][here]].
-
-*** Configuration
-
-Order corrections by likeliness, not by the default of alphabetical
-ordering.
-
-#+BEGIN_SRC emacs-lisp
-(setq flyspell-sort-corrections nil)
-#+END_SRC
-
-Do not print messages for every word (when checking the entire
-buffer). This is a major performance gain.
-#+BEGIN_SRC emacs-lisp
-(setq flyspell-issue-message-flag nil)
-#+END_SRC
-
-Switch between German and English dictionaries.
-
-#+BEGIN_SRC emacs-lisp
-  (defun flyspell-switch-dictionary()
-    "Switch between German and English dictionaries"
-    (interactive)
-    (let* ((dic ispell-current-dictionary)
-           (change (if (string= dic "deutsch") "english" "deutsch")))
-      (ispell-change-dictionary change)
-      (message "Dictionary switched from %s to %s" dic change)))
-#+END_SRC
-
-*** Do not loose all spellchecking information after adding one word to a personal dictionary
-
-Advice to re-check the buffer after a word has been added to the
-dictionary. This has the benefit of the word actually being cleared,
-but the downside that the whole buffer has to be re-checked which an
-take some time.
-
-#+BEGIN_SRC emacs-lisp
-
-(defun flyspell-buffer-after-pdict-save (&rest _)
-  (flyspell-buffer))
-
-(advice-add 'ispell-pdict-save :after #'flyspell-buffer-after-pdict-save)
-
-#+END_SRC
-
-The proper solution (for which I don't have time now) is to just mark
-all further occurrences of the word you just saved as correct (without
-having to recheck the whole buffer).
-
-*** TODO Implement =ispell-pdict-save= with above requirement
 
 * OS Specific
 ** Linux
