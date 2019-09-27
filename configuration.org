@@ -77,7 +77,10 @@ down in this file, some are used with the default configuration.
 
 * Default Settings
 This section contains settings for built-in Emacs features.
-
+** Prefer newer source files over byte-complied versions
+#+BEGIN_SRC emacs-lisp
+  (setq load-prefer-newer t)
+#+END_SRC
 ** Gargabe Collection
 
 Allow 20MB of memory (instead of 0.76MB) before calling garbage
@@ -193,6 +196,13 @@ default to not confuse beginners.
 (load custom-file t)
 #+END_SRC
 * ido-mode
+First, set the find-file-at-point bindings (before overriding with ido
+bindings)
+
+#+BEGIN_SRC emacs-lisp
+  (setq ffap-require-prefix t)
+  (ffap-bindings)
+#+END_SRC
 
 =ido= means "Interactively Do Things"
 
