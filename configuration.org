@@ -61,7 +61,8 @@ down in this file, some are used with the default configuration.
                         rust-mode
                         magit
                         which-key
-                        git-link))
+                        git-link
+                        exec-path-from-shell))
 #+END_SRC
 
 ** Install packages
@@ -179,46 +180,6 @@ default to not confuse beginners.
 #+BEGIN_SRC emacs-lisp
 (scroll-bar-mode -1)
 #+END_SRC
-** Remember the cursor position of files when reopening them
-#+BEGIN_SRC emacs-lisp
-  (setq save-place-file "~/.emacs.d/saveplace")
-  (setq-default save-place t)
-  (require 'saveplace)
-#+END_SRC
-** Set $MANPATH, $PATH and exec-path from shell even when started from GUI helpers like =dmenu= or =Spotlight=
-
-#+BEGIN_SRC emacs-lisp
-
-    (exec-path-from-shell-initialize)
-
-#+END_SRC
-** =windmove=
-
-Windmove is built into Emacs. It lets you move point from window to
-window using Shift and the arrow keys. This is easier to type than
-‘C-x o’ when there are multiple windows open.
-
-#+BEGIN_SRC emacs-lisp
-
-(when (fboundp 'windmove-default-keybindings)
-  (windmove-default-keybindings))
-
-#+END_SRC
-
-** =winner-mode=
-
-Allows to 'undo' (and 'redo') changes in the window configuration with
-the key commands ‘C-c left’ and ‘C-c right’.
-
-#+BEGIN_SRC emacs-lisp
-  (when (fboundp 'winner-mode)
-    (winner-mode 1))
-#+END_SRC
-
-Getting from many windows to one window is easy: 'C-x 1' will do it.
-But getting back to a delicate WindowConfiguration is difficult. This
-is where Winner Mode comes in: With it, going back to a previous
-session is easy.
 ** Bell
    Do not ring the system bell or show a visible feedback.
 
@@ -226,20 +187,6 @@ session is easy.
 (setq ring-bell-function 'ignore)
 #+END_SRC
 
-** AngeFtp
-Try to use passive mode for FTP.
-
-Note: Some firewalls might not allow standard active mode. However:
-Some FTP Servers might not allow passive mode. So if there's problems
-when connecting to an FTP, try to revert to active mode.
-#+BEGIN_SRC emacs-lisp
-(setq ange-ftp-try-passive-mode t)
-#+END_SRC
-** eww
-   When entering eww, use cursors to scroll without changing point.
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'eww-mode-hook 'scroll-lock-mode)
-#+END_SRC
 ** Custom-File
 #+BEGIN_SRC emacs-lisp
 (setq custom-file "~/.emacs.d/custom-settings.el")
@@ -332,6 +279,19 @@ Enable global on the fly syntax checking through =flycheck=.
 #+BEGIN_SRC emacs-lisp
 
   (add-hook 'after-init-hook #'global-flycheck-mode)
+
+  ;; use local eslint from node_modules before global
+  ;; http://emacs.stackexchange.com/questions/21205/flycheck-with-file-relative-eslint-executable
+  (defun my/use-eslint-from-node-modules ()
+    (let* ((root (locate-dominating-file
+                  (or (buffer-file-name) default-directory)
+                  "node_modules"))
+           (eslint (and root
+                        (expand-file-name "node_modules/eslint/bin/eslint.js"
+                                          root))))
+      (when (and eslint (file-executable-p eslint))
+        (setq-local flycheck-javascript-eslint-executable eslint))))
+  (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
 
 #+END_SRC
 *** Manage TODO/FIXME/XXX comments
@@ -489,13 +449,14 @@ Tern shortcuts:
 
 #+BEGIN_SRC emacs-lisp
 
-  (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
 
   ;; (add-hook 'js-mode-hook 'js2-minor-mode)
   ;; (setq js2-highlight-level 3)
   (setq js-indent-level 4)
-  ;; Semicolons are optional in JS, do not warn about them missing
-  ;; (setq js2-strict-missing-semi-warning nil)
+
+  ;; use web-mode for .jsx files
+  (add-to-list 'auto-mode-alist '("\\.jsx$" . web-mode))
 
 #+END_SRC
 
@@ -769,6 +730,10 @@ PDF Tools for me is - hands down - the best PDF viewer! It's not an
 excuse to do even more within Emacs.
 
 * OS Specific
+#+BEGIN_SRC emacs-lisp
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize))
+#+END_SRC
 ** Linux
 ** macOS
 #+BEGIN_SRC emacs-lisp
