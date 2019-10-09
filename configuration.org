@@ -75,6 +75,32 @@ down in this file, some are used with the default configuration.
     (add-to-list 'package-selected-packages p))
 #+END_SRC
 
+** Load unpackaged emacs lisp
+
+#+BEGIN_SRC emacs-lisp
+  (setq
+    elisp-dir
+    (concat
+      (getenv "HOME")
+      "/.emacs.d/elisp/"))
+
+  (defun get-elisp-subdirs ()
+    (seq-filter
+      (lambda (dirname) (and (not (equal dirname ".")) (not (equal dirname ".."))))
+      (directory-files elisp-dir)))
+
+  (dolist
+    (uelisp (get-elisp-subdirs))
+    (progn
+      (add-to-list
+        'load-path
+        (concat
+          elisp-dir
+	  "/"
+          uelisp))
+      (eval (car (read-from-string (concat "(require '" uelisp ")"))))))
+#+END_SRC
+
 * Default Settings
 This section contains settings for built-in Emacs features.
 ** Prefer newer source files over byte-complied versions
