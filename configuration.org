@@ -62,7 +62,12 @@ down in this file, some are used with the default configuration.
                         magit
                         which-key
                         git-link
-                        exec-path-from-shell))
+                        exec-path-from-shell
+                        robe
+                        neotree
+                        perspective
+                        persp-projectile
+                        csharp-mode))
 #+END_SRC
 
 ** Install packages
@@ -106,6 +111,10 @@ This section contains settings for built-in Emacs features.
 ** Prefer newer source files over byte-complied versions
 #+BEGIN_SRC emacs-lisp
   (setq load-prefer-newer t)
+#+END_SRC
+** Set default frame size
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'after-init-hook (lambda () (when window-system (set-frame-size (selected-frame) 235 100))))
 #+END_SRC
 ** Gargabe Collection
 
@@ -271,16 +280,10 @@ Basic Configuration
   (ac-config-default)
 #+END_SRC
 *** Tabs
-Set tab width to 4 for all buffers
+Use 2 spaces instead of a tab.
 
 #+BEGIN_SRC emacs-lisp
-  (setq-default tab-width 4)
-#+END_SRC
-
-Use 4 spaces instead of a tab.
-
-#+BEGIN_SRC emacs-lisp
-  (setq-default tab-width 4 indent-tabs-mode nil)
+  (setq-default tab-width 2 indent-tabs-mode nil)
 #+END_SRC
 
 Indentation cannot insert tabs.
@@ -292,7 +295,6 @@ Indentation cannot insert tabs.
 Use 4 spaces instead of tabs for programming languages.
 
 #+BEGIN_SRC emacs-lisp
-  (setq js-indent-level 4)
 
   (setq python-indent 4)
 
@@ -302,8 +304,6 @@ Use 4 spaces instead of tabs for programming languages.
             (lambda ()
               (setq sh-basic-offset 4
                     sh-indentation 4)))
-
-  (setq web-mode-markup-indent-offset 4)
 #+END_SRC
 
 *** Syntax Checking
@@ -482,18 +482,42 @@ Tern shortcuts:
 #+END_SRC
 
 *** General JavaScript configuration
+#+BEGIN_SRC emacs-lisp
+  (setq js-indent-level 2)
+#+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-
   (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
+#+END_SRC
 
-  ;; (add-hook 'js-mode-hook 'js2-minor-mode)
-  ;; (setq js2-highlight-level 3)
-  (setq js-indent-level 4)
-
-  ;; use web-mode for .jsx files
+Use web-mode for .jsx files
+#+BEGIN_SRC emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.jsx$" . web-mode))
+#+END_SRC
 
+** Ruby
+*** Use ruby-mode for *.rb
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-mode))
+#+END_SRC
+
+*** Configure rvm
+#+BEGIN_SRC emacs-lisp
+  (require 'rvm)
+#+END_SRC
+
+Activate the correct project Ruby before robe-start runs.
+#+BEGIN_SRC emacs-lisp
+  (defadvice inf-ruby-console-auto (before activate-rvm-for-robe activate)
+    (rvm-activate-corresponding-ruby))
+#+END_SRC
+
+*** Configure Robe for intelligent code navigation
+
+Use robe mode
+#+BEGIN_SRC emacs-lisp
+  (require 'robe)
+  (add-hook 'ruby-mode-hook 'robe-mode)
 #+END_SRC
 
 ** PugMode
@@ -545,6 +569,8 @@ web-mode.el is an autonomous major-mode for editing web templates.
   (setq web-mode-enable-current-element-highlight t)
   (setq web-mode-ac-sources-alist
     '(("html" . (ac-source-words-in-buffer ac-source-abbrev))))
+
+  (setq web-mode-markup-indent-offset 2)
 #+END_SRC
 
 ** yaml
@@ -589,7 +615,7 @@ Quickly create links to remote repositories.
 Enable git-link globally and bind to (=C-cgl)
 
 #+BEGIN_SRC emacs-lisp
-  (setq git-link-default-remote "upstream")
+  (setq git-link-default-remote "origin")
   (global-set-key "\C-cgl" 'git-link)
 #+END_SRC
 
@@ -632,6 +658,49 @@ files.
   (advice-add 'projectile-find-implementation-or-test :around #'cache-impl-test-files)
 #+END_SRC
 
+Remap projectile-switch-project with projectile-persp-switch-project
+#+BEGIN_SRC emacs-lisp
+  (persp-mode)
+  (define-key projectile-mode-map [remap projectile-switch-project] 'projectile-persp-switch-project)
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+  (defun my-extended-neotree-show (orig-fun &rest args)
+    (let ((curr-default-dir default-directory)
+          (res (apply orig-fun args)))
+      (progn
+        (neotree-dir curr-default-dir)
+        res)))
+
+  (advice-add 'neotree-show :around #'my-extended-neotree-show)
+
+  ;(defun my-update-neobuffer-root ()
+  ;  (let ((neo-buffer (get-buffer " *NeoTree*")))
+  ;    (if neo-buffer
+  ;        (let ((neo-buffer-is-in-persp (member neo-buffer (persp-buffers (persp-curr))))
+  ;              (neo-window-is-open (get-buffer-window neo-buffer)))
+  ;          (if (and neo-buffer-is-in-persp neo-window-is-open)
+  ;            (neotree-show)
+  ;            nil))
+  ;      nil)))
+
+  ;(defun my-extended-projectile-persp-switch (orig-fun &rest args)
+  ;  (let ((res (apply orig-fun args)))
+  ;    (progn
+  ;      (setq default-directory (projectile-project-root))
+  ;      (my-update-neobuffer-root)
+  ;      res)))
+
+  ;(advice-add 'projectile-persp-switch-project :around #'my-extended-projectile-persp-switch)
+
+#+END_SRC
+
+Interactively call find-file immediately after switching to a new perspective
+#+BEGIN_SRC emacs-lisp
+  (defun my-switch-project-action () (call-interactively #'find-file))
+  (setq projectile-switch-project-action 'my-switch-project-action)
+#+END_SRC
+
 #+BEGIN_SRC emacs-lisp
 (defun projectile-nodeunit-test-file ()
   "Run test command on a single file"
@@ -639,6 +708,12 @@ files.
   (let ((command (concat "NODE_ENV=test ALLOW_CONFIG_MUTATIONS=y node_modules/nodeunit/bin/nodeunit " (buffer-file-name)))
         (default-directory (projectile-compilation-dir)))
     (compile command)))
+#+END_SRC
+
+** Neotree
+Create neotree keybinding
+#+BEGIN_SRC emacs-lisp
+  (global-set-key [f8] 'neotree-toggle)
 #+END_SRC
 ** Rust
 
