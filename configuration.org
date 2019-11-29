@@ -117,9 +117,13 @@ This section contains settings for built-in Emacs features.
   (defun my-set-frame-size ()
     (when window-system (set-frame-size (selected-frame) 235 100)))
 
+  (defun my-new-frame ()
+    (my-set-frame-size)
+    (call-interactively #'projectile-persp-switch-project))
+
   (add-hook 'after-init-hook (lambda () (my-set-frame-size)))
 
-  (advice-add 'make-frame-command :after #'my-set-frame-size)
+  (advice-add 'make-frame-command :after #'my-new-frame)
 #+END_SRC
 ** Gargabe Collection
 
