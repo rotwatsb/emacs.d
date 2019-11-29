@@ -114,7 +114,12 @@ This section contains settings for built-in Emacs features.
 #+END_SRC
 ** Set default frame size
 #+BEGIN_SRC emacs-lisp
-  (add-hook 'after-init-hook (lambda () (when window-system (set-frame-size (selected-frame) 235 100))))
+  (defun my-set-frame-size ()
+    (when window-system (set-frame-size (selected-frame) 235 100)))
+
+  (add-hook 'after-init-hook (lambda () (my-set-frame-size)))
+
+  (advice-add 'make-frame-command :after #'my-set-frame-size)
 #+END_SRC
 ** Gargabe Collection
 
@@ -280,10 +285,10 @@ Basic Configuration
   (ac-config-default)
 #+END_SRC
 *** Tabs
-Use 2 spaces instead of a tab.
+Use 4 spaces instead of a tab.
 
 #+BEGIN_SRC emacs-lisp
-  (setq-default tab-width 2 indent-tabs-mode nil)
+  (setq-default tab-width 4)
 #+END_SRC
 
 Indentation cannot insert tabs.
@@ -298,7 +303,7 @@ Use 4 spaces instead of tabs for programming languages.
 
   (setq python-indent 4)
 
-  (setq css-indent-offset 2)
+  (setq css-indent-offset 4)
 
   (add-hook 'sh-mode-hook
             (lambda ()
@@ -483,7 +488,7 @@ Tern shortcuts:
 
 *** General JavaScript configuration
 #+BEGIN_SRC emacs-lisp
-  (setq js-indent-level 2)
+  (setq js-indent-level 4)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -570,7 +575,7 @@ web-mode.el is an autonomous major-mode for editing web templates.
   (setq web-mode-ac-sources-alist
     '(("html" . (ac-source-words-in-buffer ac-source-abbrev))))
 
-  (setq web-mode-markup-indent-offset 2)
+  (setq web-mode-markup-indent-offset 4)
 #+END_SRC
 
 ** yaml
