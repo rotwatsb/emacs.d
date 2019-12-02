@@ -729,6 +729,10 @@ Create neotree keybinding
       (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
 #+END_SRC
 
+* eshell
+#+BEGIN_SRC emacs-lisp
+  (global-set-key "\C-ce" 'eshell)
+#+END_SRC
 * org-mode
 
 Outline-based notes management and organizer. It is an outline-mode
