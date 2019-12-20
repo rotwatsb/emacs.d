@@ -239,6 +239,12 @@ default to not confuse beginners.
 (setq custom-file "~/.emacs.d/custom-settings.el")
 (load custom-file t)
 #+END_SRC
+** Navigation
+#+BEGIN_SRC emacs-lisp
+  (define-key global-map (kbd "M-p") (lambda () (interactive) (forward-line -4)))
+  (define-key global-map (kbd "M-n") (lambda () (interactive) (forward-line 4)))
+#+END_SRC
+
 * ido-mode
 First, set the find-file-at-point bindings (before overriding with ido
 bindings)
@@ -719,6 +725,12 @@ Interactively call find-file immediately after switching to a new perspective
     (compile command)))
 #+END_SRC
 
+** Perspectives
+*** Configuration
+#+BEGIN_SRC emacs-lisp
+  (define-key persp-mode-map (kbd "C-x C-n") 'persp-next)
+  (define-key persp-mode-map (kbd "C-x C-p") 'persp-prev)
+#+END_SRC
 ** Neotree
 Create neotree keybinding
 #+BEGIN_SRC emacs-lisp
