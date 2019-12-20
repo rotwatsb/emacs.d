@@ -745,6 +745,10 @@ Create neotree keybinding
       (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
 #+END_SRC
 
+** C#
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'auto-mode-alist '("\\.csx?\\'" . csharp-mode))
+#+END_SRC
 * eshell
 #+BEGIN_SRC emacs-lisp
   (global-set-key "\C-ce" 'eshell)
