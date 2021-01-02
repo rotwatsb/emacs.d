@@ -11,3 +11,6 @@ auto-save-list/
 ac-comphist.dat
 custom-settings.el
 transient/
+request/
+projectile.cache
+network-security.data

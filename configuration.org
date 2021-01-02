@@ -40,34 +40,23 @@ down in this file, some are used with the default configuration.
 
 #+BEGIN_SRC emacs-lisp
 
-  (defvar my-packages '(ag
-                        flycheck
-                        flycheck-rust
-                        flx-ido
-                        auto-complete
-                        web-mode
-                        exec-path-from-shell
-                        js2-mode
-                        rainbow-mode
-                        comment-tags
-                        sass-mode
-                        pug-mode
-                        yaml-mode
-                        pdf-tools
-                        tern
-                        tern-auto-complete
-                        projectile
-                        markdown-mode
-                        rust-mode
-                        magit
-                        which-key
-                        git-link
-                        exec-path-from-shell
-                        robe
-                        neotree
-                        perspective
-                        persp-projectile
-                        csharp-mode))
+(defvar my-packages '(lsp-mode
+                      lsp-ui
+                      request
+                      flx-ido
+                      company
+                      exec-path-from-shell
+                      flymake-eslint
+                      projectile
+                      markdown-mode
+                      magit
+                      git-link
+                      perspective
+                      persp-projectile
+                      web-mode
+                      yasnippet
+                      which-key
+                      prettier))
 #+END_SRC
 
 ** Install packages
@@ -101,9 +90,7 @@ down in this file, some are used with the default configuration.
         'load-path
         (concat
           elisp-dir
-	  "/"
-          uelisp))
-      (eval (car (read-from-string (concat "(require '" uelisp ")"))))))
+          uelisp))))
 #+END_SRC
 
 * Default Settings
@@ -207,6 +194,7 @@ buffer containing that file so they can't get out of sync.
 
 #+BEGIN_SRC emacs-lisp
   (tool-bar-mode 0)
+  (menu-bar-mode -1)
 #+END_SRC
 
 ** Automatic Line Breaks
@@ -223,10 +211,6 @@ default to not confuse beginners.
   (put 'narrow-to-region 'disabled nil)
 #+END_SRC
 
-** Disable scroll bars
-#+BEGIN_SRC emacs-lisp
-(scroll-bar-mode -1)
-#+END_SRC
 ** Bell
    Do not ring the system bell or show a visible feedback.
 
@@ -245,6 +229,45 @@ default to not confuse beginners.
   (define-key global-map (kbd "M-n") (lambda () (interactive) (forward-line 4)))
 #+END_SRC
 
+** set default them
+#+BEGIN_SRC emacs-lisp
+  (load-theme 'tango-dark t)
+#+END_SRC
+**
+#+BEGIN_SRC emacs-lisp
+  (defun my-copy-to-clipboard ()
+    (interactive)
+    (if (use-region-p)
+        (shell-command
+         (concat "echo \"" (buffer-substring-no-properties (region-beginning) (region-end)) "\" | pbcopy"))
+      ()
+      ))
+
+  (global-set-key (kbd "M-c") 'my-copy-to-clipboard)
+#+END_SRC
+** Mode line format
+
+#+BEGIN_SRC emacs-lisp
+  (setq
+    mode-line-format
+    (list
+      "%e"
+      mode-line-front-space
+      ;mode-line-mule-info
+      ;mode-line-client
+      ;mode-line-modified
+      ;mode-line-remote
+      ;mode-line-frame-identification
+      mode-line-buffer-identification
+      "  "
+      mode-line-position
+      ;(vc-mode vc-mode)
+      ;"  "
+      ;mode-line-modes
+      mode-line-misc-info
+      ;mode-line-end-spaces
+    ))
+#+END_SRC
 * ido-mode
 First, set the find-file-at-point bindings (before overriding with ido
 bindings)
@@ -278,21 +301,15 @@ capable counterparts
 
 #+END_SRC
 
-* Which Key
-  =which-key= displays available keybindings in a popup.
-
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'org-mode-hook 'which-key-mode)
-#+END_SRC
-
 * Programming
 ** General
-*** Auto Complete
-https://github.com/auto-complete/auto-complete
-
-Basic Configuration
+*** company
 #+BEGIN_SRC emacs-lisp
-  (ac-config-default)
+(add-hook 'after-init-hook 'global-company-mode)
+#+END_SRC
+*** lsp mode
+#+BEGIN_SRC emacs-lisp
+  (setq lsp-keymap-prefix "C-c l")
 #+END_SRC
 *** Tabs
 Use 4 spaces instead of a tab.
@@ -306,91 +323,16 @@ Indentation cannot insert tabs.
 #+BEGIN_SRC emacs-lisp
   (setq-default indent-tabs-mode nil)
 #+END_SRC
-
-Use 4 spaces instead of tabs for programming languages.
-
-#+BEGIN_SRC emacs-lisp
-
-  (setq python-indent 4)
-
-  (setq css-indent-offset 4)
-
-  (add-hook 'sh-mode-hook
-            (lambda ()
-              (setq sh-basic-offset 4
-                    sh-indentation 4)))
-#+END_SRC
-
-*** Syntax Checking
-
-http://www.flycheck.org/
-
-Enable global on the fly syntax checking through =flycheck=.
-
-#+BEGIN_SRC emacs-lisp
-
-  (add-hook 'after-init-hook #'global-flycheck-mode)
-
-  ;; use local eslint from node_modules before global
-  ;; http://emacs.stackexchange.com/questions/21205/flycheck-with-file-relative-eslint-executable
-  (defun my/use-eslint-from-node-modules ()
-    (let* ((root (locate-dominating-file
-                  (or (buffer-file-name) default-directory)
-                  "node_modules"))
-           (eslint (and root
-                        (expand-file-name "node_modules/eslint/bin/eslint.js"
-                                          root))))
-      (when (and eslint (file-executable-p eslint))
-        (setq-local flycheck-javascript-eslint-executable eslint))))
-  (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
-
-#+END_SRC
-*** Manage TODO/FIXME/XXX comments
-
-https://github.com/vincekd/comment-tags
-
-=comment-tags= highlights and lists comment tags such as 'TODO', 'FIXME', 'XXX'.
-
-Commands (prefixed by =C-c t=):
-
-    - =b= to list tags in current buffer (comment-tags-list-tags-buffer).
-    - =a= to list tags in all buffers (comment-tags-list-tags-buffers).
-    - =s= to jump to tag in current buffer by a word or phrase using reading-completion (comment-tags-find-tags-buffer).
-    - =n= to jump to next tag from point (comment-tags-next-tag).
-    - =p= to jump to previous tag from point (comment-tags-previous-tag).
-
-#+BEGIN_SRC emacs-lisp
-  (setq comment-tags-keymap-prefix (kbd "C-c t"))
-  (with-eval-after-load "comment-tags"
-    (setq comment-tags-keyword-faces
-          `(("TODO" . ,(list :weight 'bold :foreground "#DF5427"))
-            ("FIXME" . ,(list :weight 'bold :foreground "#DF5427"))
-            ("BUG" . ,(list :weight 'bold :foreground "#DF5427"))
-            ("HACK" . ,(list :weight 'bold :foreground "#DF5427"))
-            ("KLUDGE" . ,(list :weight 'bold :foreground "#DF5427"))
-            ("XXX" . ,(list :weight 'bold :foreground "#DF5427"))
-            ("INFO" . ,(list :weight 'bold :foreground "#1FDA9A"))
-            ("DONE" . ,(list :weight 'bold :foreground "#1FDA9A"))))
-    (setq comment-tags-comment-start-only t
-          comment-tags-require-colon t
-          comment-tags-case-sensitive t
-          comment-tags-show-faces t
-          comment-tags-lighter nil))
-  (add-hook 'prog-mode-hook 'comment-tags-mode)
-#+END_SRC
-
 *** Auto-indent with the Return key
 
 #+BEGIN_SRC emacs-lisp
   (define-key global-map (kbd "RET") 'newline-and-indent)
 #+END_SRC
-
 *** Highlight matching parenthesis
 
 #+BEGIN_SRC emacs-lisp
   (show-paren-mode t)
 #+END_SRC
-
 *** Delete trailing whitespace
 
 Delete trailing whitespace in all modes. _Except_ when editing
@@ -403,170 +345,19 @@ line break.
                                                  (derived-mode-p 'org-mode))
                                     (delete-trailing-whitespace)))))
 #+END_SRC
+** git-link
 
-*** Compilation Mode
-Tell compilation mode how to parse node stacktrace.
+https://github.com/sshaw/git-link
 
-#+BEGIN_SRC emacs-lisp
-  (add-hook
-   'compilation-mode-hook
-   (lambda ()
-     (progn
-       (setq compilation-error-regexp-alist-alist
-             (cons '(node "^[  ]+at \\(?:[^\(\n]+ \(\\)?\\([a-zA-Z\.0-9_/-]+\\):\\([0-9]+\\):\\([0-9]+\\)\)?$"
-                          1 ;; file
-                          2 ;; line
-                          3 ;; column
-                          )
-                   compilation-error-regexp-alist-alist))
-       (setq compilation-error-regexp-alist
-             (cons 'node compilation-error-regexp-alist)))))
-#+END_SRC
-** JavaScript
-*** =js2-mode= and =tern=
+Quickly create links to remote repositories.
 
-JavaScript is improved with =js2-mode= as well as
-[[http://ternjs.net/][Tern]].
-
-Tern is a stand-alone code-analysis engine for JavaScript used for:
-
-- Auto completion on variables and properties
-- Function argument hints
-- Querying the type of an expression
-- Finding the definition of something
-- Automatic refactoring
-
-Tern is installed as an NPM package: =npm install -g tern=.
-
-To enable Tern in emacs, the =tern= and =tern-auto-complete=
-packages are installed.
-
-For completion to work in a Node.js project, a =.tern-project= file like
-this is required:
-
-#+BEGIN_EXAMPLE
-    {"plugins": {"node": {}}}
-#+END_EXAMPLE
-
-or
-
-#+BEGIN_EXAMPLE
-    {"libs": ["browser", "jquery"]}
-#+END_EXAMPLE
-
-If no project file is found, it’ll fall back to a default
-configuration. You can change this default configuration by putting a
-=.tern-config= file, with the same format as =.tern-project=, in your home
-directory.
-
-My =~/.tern-config= file looks like this:
-
-#+BEGIN_EXAMPLE
-{
-  "libs": [
-    "browser"
-  ],
-  "plugins": {
-    "es_modules": {},
-    "node": {}
-  }
-}
-#+END_EXAMPLE
-
-[[http://ternjs.net/doc/manual.html#configuration][Here]] is more documentation on how to configure a Tern project.
-
-Tern shortcuts:
-
-- =M-.= Jump to the definition of the thing under the cursor.
-- =M-,= Brings you back to last place you were when you pressed M-..
-- =C-c C-r= Rename the variable under the cursor.
-- =C-c C-c= Find the type of the thing under the cursor.
-- =C-c C-d= Find docs of the thing under the cursor. Press again to
-  open the associated URL (if any).
-
-**** Configuration
+Enable git-link globally and bind to (=C-cgl)
 
 #+BEGIN_SRC emacs-lisp
-
-  (add-hook 'js-mode-hook (lambda () (tern-mode t)))
-  (eval-after-load 'tern
-     '(progn
-        (require 'tern-auto-complete)
-        (tern-ac-setup)))
-
+  (setq git-link-default-remote "origin")
+  (global-set-key "\C-cgl" 'git-link)
 #+END_SRC
-
-*** General JavaScript configuration
-#+BEGIN_SRC emacs-lisp
-  (setq js-indent-level 4)
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
-#+END_SRC
-
-Use web-mode for .jsx files
-#+BEGIN_SRC emacs-lisp
-  (add-to-list 'auto-mode-alist '("\\.jsx$" . web-mode))
-#+END_SRC
-
-** Ruby
-*** Use ruby-mode for *.rb
-#+BEGIN_SRC emacs-lisp
-  (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-mode))
-#+END_SRC
-
-*** Configure rvm
-#+BEGIN_SRC emacs-lisp
-  (require 'rvm)
-#+END_SRC
-
-Activate the correct project Ruby before robe-start runs.
-#+BEGIN_SRC emacs-lisp
-  (defadvice inf-ruby-console-auto (before activate-rvm-for-robe activate)
-    (rvm-activate-corresponding-ruby))
-#+END_SRC
-
-*** Configure Robe for intelligent code navigation
-
-Use robe mode
-#+BEGIN_SRC emacs-lisp
-  (require 'robe)
-  (add-hook 'ruby-mode-hook 'robe-mode)
-#+END_SRC
-
-** PugMode
-*** Configuration
-
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'pug-mode-hook (lambda () setq tab-width 4))
-#+END_SRC
-
-** Web
-*** rainbow-mode
-=rainbow-mode= is a minor mode for Emacs which displays strings
-representing colors with the color they represent as background.
-
-#+BEGIN_SRC emacs-lisp
-(add-hook 'prog-mode-hook 'rainbow-mode)
-#+END_SRC
-*** Process JSON
-
-[[https://stedolan.github.io/jq/][jq]] is a lightweight and flexible command-line JSON processor.
-
-Thanks to [[https://github.com/branch14/emacs.d][@branch14]] of 200ok fame for the function!
-
-#+BEGIN_SRC emacs-lisp
-(defun jq-json ()
-  (interactive)
-  (save-excursion
-    (shell-command-on-region
-     (point-min)
-     (point-max)
-     (read-string "Command: " "jq -M '.'") t t)))
-#+END_SRC
-
-*** web-mode
+** web-mode
 
 http://web-mode.org/
 
@@ -587,53 +378,29 @@ web-mode.el is an autonomous major-mode for editing web templates.
 
   (setq web-mode-markup-indent-offset 4)
 #+END_SRC
-
-** yaml
+** Javascript
+*** General configuration
+#+BEGIN_SRC emacs-lisp
+  (setq js-indent-level 2)
+#+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-  (require 'yaml-mode)
-  (add-to-list 'auto-mode-alist '("\\.yml$" . yaml-mode))
+  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
 #+END_SRC
-
-** Markdown
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'markdown-mode-hook 'auto-fill-mode)
-
-#+END_SRC
-
-** Magit
-
-Magit is an interface to the version control system Git.
-
-*** Configuration
-
-Create shortcut for =Magit=.
 
 #+BEGIN_SRC emacs-lisp
-  (global-set-key (kbd "C-x g") 'magit-status)
+  (add-hook 'js-mode-hook 'lsp)
+#+END_SRC
+** Ruby
+Use ruby-mode for *.rb
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-mode))
 #+END_SRC
 
-Disable default emacs version control system
-
-#+BEGIN_SRC emacs-lip
-  (setq vc-handled-backends nil)
-#+END_SRC
-
-** git-link
-
-https://github.com/sshaw/git-link
-
-Quickly create links to remote repositories.
-
-*** Configuration
-
-Enable git-link globally and bind to (=C-cgl)
 
 #+BEGIN_SRC emacs-lisp
-  (setq git-link-default-remote "origin")
-  (global-set-key "\C-cgl" 'git-link)
+  (add-hook 'ruby-mode-hook 'lsp)
 #+END_SRC
-
 ** Projectile
 
 https://github.com/bbatsov/projectile
@@ -654,9 +421,9 @@ Enable Projectile globally.
 Register npm project type.
 #+BEGIN_SRC emacs-lisp
   (projectile-register-project-type
-   'npm '("package.json")
+   'ember '(".ember-cli")
    :test "npm test"
-   :test-suffix "Test")
+   :test-suffix "-test")
 #+END_SRC
 
 Wrap 'projectile-find-implementation-or-test' to cache looked-up
@@ -679,37 +446,6 @@ Remap projectile-switch-project with projectile-persp-switch-project
   (define-key projectile-mode-map [remap projectile-switch-project] 'projectile-persp-switch-project)
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
-  (defun my-extended-neotree-show (orig-fun &rest args)
-    (let ((curr-default-dir default-directory)
-          (res (apply orig-fun args)))
-      (progn
-        (neotree-dir curr-default-dir)
-        res)))
-
-  (advice-add 'neotree-show :around #'my-extended-neotree-show)
-
-  ;(defun my-update-neobuffer-root ()
-  ;  (let ((neo-buffer (get-buffer " *NeoTree*")))
-  ;    (if neo-buffer
-  ;        (let ((neo-buffer-is-in-persp (member neo-buffer (persp-buffers (persp-curr))))
-  ;              (neo-window-is-open (get-buffer-window neo-buffer)))
-  ;          (if (and neo-buffer-is-in-persp neo-window-is-open)
-  ;            (neotree-show)
-  ;            nil))
-  ;      nil)))
-
-  ;(defun my-extended-projectile-persp-switch (orig-fun &rest args)
-  ;  (let ((res (apply orig-fun args)))
-  ;    (progn
-  ;      (setq default-directory (projectile-project-root))
-  ;      (my-update-neobuffer-root)
-  ;      res)))
-
-  ;(advice-add 'projectile-persp-switch-project :around #'my-extended-projectile-persp-switch)
-
-#+END_SRC
-
 Interactively call find-file immediately after switching to a new perspective
 #+BEGIN_SRC emacs-lisp
   (defun my-switch-project-action () (call-interactively #'find-file))
@@ -728,149 +464,15 @@ Interactively call find-file immediately after switching to a new perspective
 ** Perspectives
 *** Configuration
 #+BEGIN_SRC emacs-lisp
+  (require 'perspective)
   (define-key persp-mode-map (kbd "C-x C-n") 'persp-next)
   (define-key persp-mode-map (kbd "C-x C-p") 'persp-prev)
 #+END_SRC
-** Neotree
-Create neotree keybinding
-#+BEGIN_SRC emacs-lisp
-  (global-set-key [f8] 'neotree-toggle)
-#+END_SRC
-** Rust
 
-*** Flycheck rust
-
-#+BEGIN_SRC emacs-lisp
-  (with-eval-after-load 'rust-mode
-      (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
-#+END_SRC
-
-** C#
-#+BEGIN_SRC emacs-lisp
-  (add-to-list 'auto-mode-alist '("\\.csx?\\'" . csharp-mode))
-#+END_SRC
 * eshell
 #+BEGIN_SRC emacs-lisp
   (global-set-key "\C-ce" 'eshell)
 #+END_SRC
-* org-mode
-
-Outline-based notes management and organizer. It is an outline-mode
-for keeping track of everything.
-
-** Plain Lists
-Allow ‘a.’, ‘A.’, ‘a)’ and ‘A) as list elements:
-
-#+BEGIN_SRC emacs-lisp
-
-(setq org-list-allow-alphabetical t)
-
-#+END_SRC
-
-** General configuration
-
-#+BEGIN_SRC emacs-lisp
-
-  (require 'org)
-
-  ; languages for org-babel support
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '(
-     (shell . t)
-     (js . t)
-     ))
-
-  (add-hook 'org-mode-hook 'auto-fill-mode)
-
-  (setq org-directory "~/switchdrive/org/")
-
-  (defun set-org-agenda-files ()
-    "Set different org-files to be used in `org-agenda`."
-    (setq org-agenda-files (list (concat org-directory "todo.org"))))
-
-  (set-org-agenda-files)
-
-  (global-set-key "\C-cl" 'org-store-link)
-
-  ;; Allow =pdflatex= to use shell-commands
-  ;; This will allow it to use =pygments= as syntax highlighter for exports to PDF
-  (setq org-latex-pdf-process
-        '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-          "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-          "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
-
-  ;; Include =minted= package for LaTeX exports
-  (add-to-list 'org-latex-packages-alist '("" "minted"))
-  (setq org-latex-listings 'minted)
-
-
-#+END_SRC
-
-** KOMA Script export
-
-#+BEGIN_SRC emacs-lisp
-(require 'ox-latex)
-(add-to-list 'org-latex-classes
-             '("scrartcl"
-               "\\documentclass{scrartcl}"
-               ("\\section{%s}" . "\\section*{%s}")))
-#+END_SRC
-** Tufte org-mode export
-
-#+BEGIN_SRC emacs-lisp
-
-(require 'ox-latex)
-(add-to-list 'org-latex-classes
-	     '("tuftehandout"
-	       "\\documentclass{tufte-handout}
-\\usepackage{color}
-\\usepackage{amssymb}
-\\usepackage{amsmath}n
-\\usepackage{gensymb}
-\\usepackage{nicefrac}
-\\usepackage{units}"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
-
-#+END_SRC
-
-** Keyword sets
-
-I use two workflow sets:
-
-- One for TODOs which can either be TODO or DONE
-- Another for tasks that I am WAITING for something to happen
-
-Additionally I sometimes use the keywords PROJECT and AGENDA to denote
-special bullets that I might tag (schedule/deadline) in the agenda.
-These keywords give semantics to those bullets.
-
-Note that "|" denotes a semantic state change that is reflected in a
-different color. Putting the pipe at the end means that all states
-prior should be shown in the same color.
-
-#+BEGIN_SRC emacs-lisp
-  (setq org-todo-keywords
-            '((sequence "TODO" "|" "DONE")
-              (sequence "PROJECT" "AGENDA" "|" "MINUTES")
-              (sequence "WAITING" "|")))
-#+END_SRC
-
-* pdf-tools
-
-https://github.com/politza/pdf-tools
-
-PDF Tools is, among other things, a replacement of DocView for PDF
-files. The key difference is that pages are not pre-rendered by e.g.
-ghostscript and stored in the file-system, but rather created
-on-demand and stored in memory.
-
-PDF Tools for me is - hands down - the best PDF viewer! It's not an
-excuse to do even more within Emacs.
-
 * OS Specific
 #+BEGIN_SRC emacs-lisp
   (when (memq window-system '(mac ns x))

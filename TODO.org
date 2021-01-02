@@ -1,5 +1,0 @@
-#+TITLE: Setup Emacs
-
-* Tasks
-** TODO Remove smex
-
