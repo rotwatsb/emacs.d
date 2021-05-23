@@ -478,10 +478,18 @@ Remap projectile-switch-project with projectile-persp-switch-project
   (define-key projectile-mode-map [remap projectile-switch-project] 'projectile-persp-switch-project)
 #+END_SRC
 
-Interactively call find-file immediately after switching to a new perspective
+After persp switch, set default-directory of new scratch buffer and call find-file
 #+BEGIN_SRC emacs-lisp
-  (defun my-switch-project-action () (call-interactively #'find-file))
-  (setq projectile-switch-project-action 'my-switch-project-action)
+  (defun my-no-action () ())
+  (setq projectile-switch-project-action 'my-no-action)
+
+  (defun my-projectile-persp-switch-project (orig-fun &rest args)
+    (progn
+      (apply orig-fun args)
+      (set-buffer (persp-scratch-buffer))
+      (setq default-directory (car args))
+      (call-interactively #'find-file)))
+   (advice-add 'projectile-persp-switch-project :around #'my-projectile-persp-switch-project)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
