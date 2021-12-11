@@ -1,9 +1,21 @@
 #+TITLE: Emacs configuration
-#+AUTHOR: Stephen Bradley (adapted from Alain M. Lafon, alain@200ok.ch)
+#+AUTHOR: Stephen Bradley
 
-This repository contains my Emacs configuration. It is written and
-documented in literate programming style.
-
+* Straight.el setup
+#+begin_src emacs-lisp
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+        (bootstrap-version 5))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage))
+#+end_src
 * Installation
 
 *Initial*
@@ -23,55 +35,37 @@ package-refresh-contents= and install everything using =M-x
 eval-buffer=.
 
 * Dependency management
-** Define package repositories (archives)
-
-#+BEGIN_SRC emacs-lisp
-  (require 'package)
-
-  (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
-                           ("melpa" . "https://melpa.org/packages/")
-                           ("marmalade" . "https://marmalade-repo.org/packages/")))
-#+END_SRC
-
 ** Define packages that are to be installed
 
 List all used third-party packages. Most will be configured further
 down in this file, some are used with the default configuration.
 
 #+BEGIN_SRC emacs-lisp
-
-(defvar my-packages '(lsp-mode
-                      lsp-ui
-                      request
-                      flx-ido
-                      company
-                      exec-path-from-shell
-                      flymake-eslint
-                      projectile
-                      markdown-mode
-                      magit
-                      git-link
-                      perspective
-                      persp-projectile
-                      web-mode
-                      yasnippet
-                      which-key
-                      prettier
-                      rust-mode))
+  (defvar my-packages '(lsp-mode
+                        lsp-ui
+                        request
+                        flx-ido
+                        company
+                        exec-path-from-shell
+                        flymake-eslint
+                        projectile
+                        markdown-mode
+                        magit
+                        git-link
+                        perspective
+                        persp-projectile
+                        web-mode
+                        yasnippet
+                        which-key
+                        prettier
+                        rust-mode))
 #+END_SRC
-
 ** Install packages
-
 #+BEGIN_SRC emacs-lisp
   (dolist (p my-packages)
-    (unless (package-installed-p p)
-      (package-refresh-contents)
-      (package-install p))
-    (add-to-list 'package-selected-packages p))
+    (straight-use-package p))
 #+END_SRC
-
 ** Load unpackaged emacs lisp
-
 #+BEGIN_SRC emacs-lisp
   (setq
     elisp-dir
@@ -93,7 +87,6 @@ down in this file, some are used with the default configuration.
           elisp-dir
           uelisp))))
 #+END_SRC
-
 * Default Settings
 This section contains settings for built-in Emacs features.
 ** Prefer newer source files over byte-complied versions
@@ -114,61 +107,47 @@ This section contains settings for built-in Emacs features.
   (advice-add 'make-frame-command :after #'my-new-frame)
 #+END_SRC
 ** Gargabe Collection
-
 Allow 20MB of memory (instead of 0.76MB) before calling garbage
 collection. This means GC runs less often, which speeds up some
 operations.
-
 #+BEGIN_SRC emacs-lisp
   (setq gc-cons-threshold 20000000)
 #+END_SRC
-
 ** Do not create backup files
 #+BEGIN_SRC emacs-lisp
   (setq make-backup-files nil)
 #+END_SRC
-
 ** Auto-Save in =/tmp=
-
 Store backups and auto-saved files in =TEMPORARY-FILE-DIRECTORY= (which
 defaults to /tmp on Unix), instead of in the same directory as the
 file.
-
 #+BEGIN_SRC emacs-lisp
   (setq backup-directory-alist
         `((".*" . ,temporary-file-directory)))
   (setq auto-save-file-name-transforms
         `((".*" ,temporary-file-directory t)))
 #+END_SRC
-
 ** Always follow symlinks
-   When opening a file, always follow symlinks.
-
+When opening a file, always follow symlinks.
 #+BEGIN_SRC emacs-lisp
   (setq vc-follow-symlinks t)
 #+END_SRC
-
 ** Sentences have one space after a period
 Don't assume that sentences should have two spaces after
 periods.
-
 #+BEGIN_SRC emacs-lisp
   (setq sentence-end-double-space nil)
 #+END_SRC
-
 ** Confirm before closing Emacs
 #+BEGIN_SRC emacs-lisp
   (setq confirm-kill-emacs 'y-or-n-p)
 #+END_SRC
-
 ** Human readable units in =dired-mode=
-
 #+BEGIN_SRC emacs-lisp
   (setq-default dired-listing-switches "-alh")
 #+END_SRC
-
 ** Ask =y/n= instead of =yes/no=
-   This is a favorable shorthand.
+This is a favorable shorthand.
 #+BEGIN_SRC emacs-lisp
   (fset 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
@@ -177,7 +156,7 @@ When something changes a file, automatically refresh the
 buffer containing that file so they can't get out of sync.
 
 #+BEGIN_SRC emacs-lisp
-(global-auto-revert-mode t)
+  (global-auto-revert-mode t)
 #+END_SRC
 ** Shortcut for changing font-size
 #+BEGIN_SRC emacs-lisp
@@ -185,46 +164,39 @@ buffer containing that file so they can't get out of sync.
   (define-key global-map (kbd "C-0") 'text-scale-decrease)
 #+END_SRC
 ** Disable startup message
-
 #+BEGIN_SRC emacs-lisp
   (setq inhibit-splash-screen t)
   (setq inhibit-startup-message t)
 #+END_SRC
-
 ** Do not display GUI Toolbar
-
 #+BEGIN_SRC emacs-lisp
   (tool-bar-mode 0)
   (menu-bar-mode -1)
 #+END_SRC
-
 ** Automatic Line Breaks
 #+BEGIN_SRC emacs-lisp
   (add-hook 'text-mode-hook 'auto-fill-mode)
 #+END_SRC
-
 ** Enable Narrow To Region
-
 Enable narrow-to-region (C-x n n / C-x n w). This is disabled by
 default to not confuse beginners.
-
 #+BEGIN_SRC emacs-lisp
   (put 'narrow-to-region 'disabled nil)
 #+END_SRC
 
 ** Bell
-   Do not ring the system bell or show a visible feedback.
-
+Do not ring the system bell or show a visible feedback.
 #+BEGIN_SRC emacs-lisp
-(setq ring-bell-function 'ignore)
+  (setq ring-bell-function 'ignore)
 #+END_SRC
 
 ** Custom-File
 #+BEGIN_SRC emacs-lisp
-(setq custom-file "~/.emacs.d/custom-settings.el")
-(load custom-file t)
+  (setq custom-file "~/.emacs.d/custom-settings.el")
+  (load custom-file t)
 #+END_SRC
 ** Navigation
+More efficient intra-buffer navigation.
 #+BEGIN_SRC emacs-lisp
   (define-key global-map (kbd "M-p") (lambda () (interactive) (forward-line -4)))
   (define-key global-map (kbd "M-n") (lambda () (interactive) (forward-line 4)))
@@ -292,7 +264,6 @@ everywhere.
 #+END_SRC
 
 * Search
-
 Replace i-search-(forward|backward) with their respective regexp
 capable counterparts
 
