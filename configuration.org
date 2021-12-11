@@ -306,7 +306,7 @@ capable counterparts
 ** General
 *** company
 #+BEGIN_SRC emacs-lisp
-(add-hook 'after-init-hook 'global-company-mode)
+; (add-hook 'after-init-hook 'global-company-mode)
 #+END_SRC
 *** lsp mode
 #+BEGIN_SRC emacs-lisp
@@ -333,6 +333,13 @@ Indentation cannot insert tabs.
 
 #+BEGIN_SRC emacs-lisp
   (show-paren-mode t)
+#+END_SRC
+*** Configure Flymake
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'flymake-mode-hook
+    (lambda () (define-key flymake-mode-map (kbd "C-c C-.") 'flymake-goto-next-error)))
+  (add-hook 'flymake-mode-hook
+    (lambda () (define-key flymake-mode-map (kbd "C-c C-,") 'flymake-goto-prev-error)))
 #+END_SRC
 *** Delete trailing whitespace
 
@@ -405,6 +412,7 @@ web-mode.el is an autonomous major-mode for editing web templates.
 #+BEGIN_SRC emacs-lisp
   (add-hook 'js-mode-hook 'lsp)
   (add-hook 'typescript-mode-hook 'lsp)
+  (add-hook 'rust-mode-hook 'lsp)
 #+END_SRC
 *** Require eslint-flymake
 #+BEGIN_SRC emacs-lisp
@@ -424,6 +432,13 @@ Use ruby-mode for *.rb
 
 #+BEGIN_SRC emacs-lisp
   (add-hook 'ruby-mode-hook 'lsp)
+#+END_SRC
+** Rust
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'rust-mode-hook
+    (lambda () (define-key rust-mode-map (kbd "C-c C-c") 'rust-compile)))
+  (add-hook 'rust-mode-hook
+    (lambda () (define-key rust-mode-map (kbd "C-c C-r") 'rust-run)))
 #+END_SRC
 ** Projectile
 
