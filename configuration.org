@@ -45,7 +45,6 @@ down in this file, some are used with the default configuration.
                         lsp-ui
                         request
                         flx-ido
-                        company
                         exec-path-from-shell
                         flymake-eslint
                         projectile
@@ -275,14 +274,20 @@ capable counterparts
 
 * Programming
 ** General
-*** company
-#+BEGIN_SRC emacs-lisp
-; (add-hook 'after-init-hook 'global-company-mode)
-#+END_SRC
 *** lsp mode
+Set the keymap prefix for lsp commands
+
 #+BEGIN_SRC emacs-lisp
   (setq lsp-keymap-prefix "C-c l")
 #+END_SRC
+
+Turn off lsp's completion engine, because it seems to significantly
+slow buffer responsiveness while editing..
+
+#+begin_src emacs-lisp
+  (setq lsp-completion-enable nil)
+#+end_src
+
 *** Tabs
 Use 4 spaces instead of a tab.
 
