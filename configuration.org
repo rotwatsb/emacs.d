@@ -1,6 +1,9 @@
 #+TITLE: Emacs configuration
 #+AUTHOR: Stephen Bradley
 
+# create new code blocks with C-c C-,
+# org babel key bindings: [[https://org-babel.readthedocs.io/en/latest/key-bindings/]]
+
 * Straight.el setup
 #+begin_src emacs-lisp
   (defvar bootstrap-version)
@@ -41,23 +44,26 @@ List all used third-party packages. Most will be configured further
 down in this file, some are used with the default configuration.
 
 #+BEGIN_SRC emacs-lisp
-  (defvar my-packages '(lsp-mode
-                        lsp-ui
-                        request
-                        flx-ido
-                        exec-path-from-shell
-                        flymake-eslint
-                        projectile
-                        markdown-mode
-                        magit
-                        git-link
-                        perspective
-                        persp-projectile
-                        web-mode
-                        yasnippet
-                        which-key
-                        prettier
-                        rust-mode))
+    (defvar my-packages '(lsp-mode
+                          lsp-ui
+                          request
+                          flx-ido
+                          exec-path-from-shell
+                          flymake-eslint
+                          projectile
+                          markdown-mode
+                          magit
+                          git-link
+                          perspective
+                          persp-projectile
+                          web-mode
+                          yasnippet
+                          which-key
+                          prettier
+                          rust-mode
+                          terraform-mode
+                          lsp-pyright
+  ))
 #+END_SRC
 ** Install packages
 #+BEGIN_SRC emacs-lisp
@@ -284,9 +290,9 @@ Set the keymap prefix for lsp commands
 Turn off lsp's completion engine, because it seems to significantly
 slow buffer responsiveness while editing..
 
-#+begin_src emacs-lisp
+#+BEGIN_SRC emacs-lisp
   (setq lsp-completion-enable nil)
-#+end_src
+#+END_SRC
 
 *** Tabs
 Use 4 spaces instead of a tab.
@@ -370,7 +376,18 @@ web-mode.el is an autonomous major-mode for editing web templates.
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
   (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode))
 #+END_SRC
-** Javascript
+** terraform
+Register the terraform language server
+#+begin_src emacs-lisp
+  (require 'lsp-mode)
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection '("/usr/local/bin/terraform-ls" "serve"))
+                    :major-modes '(terraform-mode)
+                    :server-id 'terraform-ls))
+
+  (add-hook 'terraform-mode-hook #'lsp)
+#+end_src
+** javascript
 *** General configuration
 #+BEGIN_SRC emacs-lisp
   (setq js-indent-level 2)
@@ -399,7 +416,7 @@ web-mode.el is an autonomous major-mode for editing web templates.
   (require 'js-doc)
   (define-key global-map (kbd "C-c i") 'js-doc-insert-function-doc)
 #+END_SRC
-** Ruby
+** ruby
 Use ruby-mode for *.rb
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-mode))
@@ -409,14 +426,20 @@ Use ruby-mode for *.rb
 #+BEGIN_SRC emacs-lisp
   (add-hook 'ruby-mode-hook 'lsp)
 #+END_SRC
-** Rust
+** rust
 #+BEGIN_SRC emacs-lisp
   (add-hook 'rust-mode-hook
     (lambda () (define-key rust-mode-map (kbd "C-c C-c") 'rust-compile)))
   (add-hook 'rust-mode-hook
     (lambda () (define-key rust-mode-map (kbd "C-c C-r") 'rust-run)))
 #+END_SRC
-** Projectile
+** python
+#+begin_src emacs-lisp
+  (add-hook 'python-mode-hook (lambda ()
+                                (require 'lsp-pyright)
+                                (lsp)))
+#+end_src
+** projectile
 
 https://github.com/bbatsov/projectile
 
@@ -492,7 +515,7 @@ After persp switch, set default-directory of new scratch buffer and call find-fi
     (compile command)))
 #+END_SRC
 
-** Perspectives
+** perspectives
 *** Configuration
 #+BEGIN_SRC emacs-lisp
   (require 'perspective)
