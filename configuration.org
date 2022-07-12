@@ -4,21 +4,6 @@
 # create new code blocks with C-c C-,
 # org babel key bindings: [[https://org-babel.readthedocs.io/en/latest/key-bindings/]]
 
-* Straight.el setup
-#+begin_src emacs-lisp
-  (defvar bootstrap-version)
-  (let ((bootstrap-file
-         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-        (bootstrap-version 5))
-    (unless (file-exists-p bootstrap-file)
-      (with-current-buffer
-          (url-retrieve-synchronously
-           "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-           'silent 'inhibit-cookies)
-        (goto-char (point-max))
-        (eval-print-last-sexp)))
-    (load bootstrap-file nil 'nomessage))
-#+end_src
 * Installation
 
 *Initial*
@@ -44,26 +29,28 @@ List all used third-party packages. Most will be configured further
 down in this file, some are used with the default configuration.
 
 #+BEGIN_SRC emacs-lisp
-    (defvar my-packages '(lsp-mode
-                          lsp-ui
-                          request
-                          flx-ido
-                          exec-path-from-shell
-                          flymake-eslint
-                          projectile
-                          markdown-mode
-                          magit
-                          git-link
-                          perspective
-                          persp-projectile
-                          web-mode
-                          yasnippet
-                          which-key
-                          prettier
-                          rust-mode
-                          terraform-mode
-                          lsp-pyright
-  ))
+      (defvar my-packages '(lsp-mode
+                            lsp-ui
+                            request
+                            flx-ido
+                            exec-path-from-shell
+                            flymake-eslint
+                            projectile
+                            markdown-mode
+                            magit
+                            git-link
+                            perspective
+                            persp-projectile
+                            web-mode
+                            yasnippet
+                            which-key
+                            prettier
+                            rust-mode
+                            terraform-mode
+                            lsp-pyright
+                            org-bullets
+                            org-roam
+    ))
 #+END_SRC
 ** Install packages
 #+BEGIN_SRC emacs-lisp
@@ -178,10 +165,6 @@ buffer containing that file so they can't get out of sync.
   (tool-bar-mode 0)
   (menu-bar-mode -1)
 #+END_SRC
-** Automatic Line Breaks
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'text-mode-hook 'auto-fill-mode)
-#+END_SRC
 ** Enable Narrow To Region
 Enable narrow-to-region (C-x n n / C-x n w). This is disabled by
 default to not confuse beginners.
@@ -278,6 +261,26 @@ capable counterparts
 
 #+END_SRC
 
+* Org Mode
+  #+begin_src emacs-lisp
+    (require 'org-bullets)
+    (add-hook 'org-mode-hook
+              (lambda ()
+                (auto-fill-mode 0)
+                (visual-line-mode 1)
+                (org-indent-mode)
+                (org-bullets-mode 1)))
+    (require 'org-roam)
+    (define-key org-mode-map (kbd "C-c n i") 'org-roam-node-insert)
+    (define-key org-mode-map (kbd "C-c n l") 'org-roam-buffer-toggle)
+    (define-key org-mode-map (kbd "C-c n f") 'org-roam-node-find)
+  #+end_src
+  
+** Org Roam
+#+begin_src emacs-lisp
+  (setq org-roam-directory (file-truename "~/notes"))
+  (org-roam-db-autosync-mode)
+#+end_src
 * Programming
 ** General
 *** lsp mode
