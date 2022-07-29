@@ -29,28 +29,31 @@ List all used third-party packages. Most will be configured further
 down in this file, some are used with the default configuration.
 
 #+BEGIN_SRC emacs-lisp
-      (defvar my-packages '(lsp-mode
-                            lsp-ui
-                            request
-                            flx-ido
-                            exec-path-from-shell
-                            flymake-eslint
-                            projectile
-                            markdown-mode
-                            magit
-                            git-link
-                            perspective
-                            persp-projectile
-                            web-mode
-                            yasnippet
-                            which-key
-                            prettier
-                            rust-mode
-                            terraform-mode
-                            lsp-pyright
-                            org-bullets
-                            org-roam
-    ))
+  (defvar my-packages '(lsp-mode
+                        lsp-ui
+                        request
+                        flx-ido
+                        exec-path-from-shell
+                        flymake-eslint
+                        projectile
+                        markdown-mode
+                        magit
+                        git-link
+                        perspective
+                        persp-projectile
+                        web-mode
+                        yasnippet
+                        which-key
+                        prettier
+                        rust-mode
+                        terraform-mode
+                        lsp-pyright
+                        org-bullets
+                        org-roam
+                        forge
+                        code-review
+                        solarized-theme
+                        ))
 #+END_SRC
 ** Install packages
 #+BEGIN_SRC emacs-lisp
@@ -192,7 +195,7 @@ More efficient intra-buffer navigation.
 
 ** set default them
 #+BEGIN_SRC emacs-lisp
-  (load-theme 'tango-dark t)
+  (load-theme 'solarized-light t)
 #+END_SRC
 **
 #+BEGIN_SRC emacs-lisp
@@ -261,7 +264,29 @@ capable counterparts
 
 #+END_SRC
 
-* Org Mode
+* Magit
+** forge
+Load forge after magit
+
+#+begin_src emacs-lisp
+  (with-eval-after-load 'magit
+    (require 'forge))
+#+end_src
+** [[https://github.com/wandersoncferreira/code-review][Code Review]]
+
+Use passwords configured for forge
+
+#+begin_src emacs-lisp
+  (setq code-review-auth-login-marker 'forge)
+#+end_src
+
+Create keybinding for code-review at point
+
+#+begin_src emacs-lisp
+  (with-eval-after-load 'code-review
+    (define-key forge-topic-mode-map (kbd "C-c r") 'code-review-forge-pr-at-point))
+#+end_src
+* Org
   #+begin_src emacs-lisp
     (require 'org-bullets)
     (add-hook 'org-mode-hook
@@ -370,6 +395,7 @@ web-mode.el is an autonomous major-mode for editing web templates.
     '(("html" . (ac-source-words-in-buffer ac-source-abbrev))))
 
   (setq web-mode-markup-indent-offset 4)
+  (setq web-mode-code-indent-offset 2)
 #+END_SRC
 ** yaml-mode
 
@@ -398,10 +424,12 @@ Register the terraform language server
 
 #+BEGIN_SRC emacs-lisp
   (require 'typescript-mode)
+  (setq typescript-indent-level 2)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
+  (add-to-list 'auto-mode-alist '("\\.cjs\\'" . js-mode))
   (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
 #+END_SRC
 
@@ -417,7 +445,7 @@ Register the terraform language server
 *** Set up js-doc
 #+BEGIN_SRC emacs-lisp
   (require 'js-doc)
-  (define-key global-map (kbd "C-c i") 'js-doc-insert-function-doc)
+  (define-key typescript-mode-map (kbd "C-c i") 'js-doc-insert-function-doc)
 #+END_SRC
 ** ruby
 Use ruby-mode for *.rb
