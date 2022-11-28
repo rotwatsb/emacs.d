@@ -440,7 +440,7 @@ Register the terraform language server
 #+END_SRC
 *** Require eslint-flymake
 #+BEGIN_SRC emacs-lisp
-  (require 'eslint-flymake)
+  (require 'flymake-eslint)
 #+END_SRC
 *** Set up js-doc
 #+BEGIN_SRC emacs-lisp
