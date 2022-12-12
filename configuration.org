@@ -53,6 +53,8 @@ down in this file, some are used with the default configuration.
                         forge
                         code-review
                         solarized-theme
+                        atom-one-dark-theme
+                        csv-mode
                         ))
 #+END_SRC
 ** Install packages
@@ -195,7 +197,7 @@ More efficient intra-buffer navigation.
 
 ** set default them
 #+BEGIN_SRC emacs-lisp
-  (load-theme 'solarized-light t)
+  (load-theme 'atom-one-dark t)
 #+END_SRC
 **
 #+BEGIN_SRC emacs-lisp
@@ -209,29 +211,20 @@ More efficient intra-buffer navigation.
 
   (global-set-key (kbd "M-c") 'my-copy-to-clipboard)
 #+END_SRC
-** Mode line format
+** Tab bar format
+#+begin_src emacs-lisp
+  (setq tab-bar-format '(tab-bar-format-global))
+  (tab-bar-mode)
+#+end_src
+* which-key mode
+Turn it on by default
+#+begin_src emacs-lisp
+  (which-key-mode)
+#+end_src
 
-#+BEGIN_SRC emacs-lisp
-  (setq
-    mode-line-format
-    (list
-      "%e"
-      mode-line-front-space
-      ;mode-line-mule-info
-      ;mode-line-client
-      ;mode-line-modified
-      ;mode-line-remote
-      ;mode-line-frame-identification
-      mode-line-buffer-identification
-      "  "
-      mode-line-position
-      ;(vc-mode vc-mode)
-      ;"  "
-      ;mode-line-modes
-      mode-line-misc-info
-      ;mode-line-end-spaces
-    ))
-#+END_SRC
+#+RESULTS:
+: t
+
 * ido-mode
 First, set the find-file-at-point bindings (before overriding with ido
 bindings)
@@ -470,6 +463,13 @@ Use ruby-mode for *.rb
                                 (require 'lsp-pyright)
                                 (lsp)))
 #+end_src
+** perspectives
+*** Configuration
+#+BEGIN_SRC emacs-lisp
+  (require 'perspective)
+  (customize-set-variable 'persp-mode-prefix-key (kbd "C-z"))
+#+END_SRC
+
 ** projectile
 
 https://github.com/bbatsov/projectile
@@ -544,14 +544,6 @@ After persp switch, set default-directory of new scratch buffer and call find-fi
   (let ((command (concat "NODE_ENV=test ALLOW_CONFIG_MUTATIONS=y node_modules/nodeunit/bin/nodeunit " (buffer-file-name)))
         (default-directory (projectile-compilation-dir)))
     (compile command)))
-#+END_SRC
-
-** perspectives
-*** Configuration
-#+BEGIN_SRC emacs-lisp
-  (require 'perspective)
-  (define-key persp-mode-map (kbd "C-x C-n") 'persp-next)
-  (define-key persp-mode-map (kbd "C-x C-p") 'persp-prev)
 #+END_SRC
 
 * eshell
