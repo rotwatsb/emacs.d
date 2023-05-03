@@ -38,6 +38,7 @@ down in this file, some are used with the default configuration.
                         projectile
                         markdown-mode
                         magit
+                        magit-popup
                         git-link
                         perspective
                         persp-projectile
@@ -55,12 +56,19 @@ down in this file, some are used with the default configuration.
                         solarized-theme
                         atom-one-dark-theme
                         csv-mode
+                        graphql-mode
+                        company-mode
                         ))
 #+END_SRC
 ** Install packages
 #+BEGIN_SRC emacs-lisp
   (dolist (p my-packages)
     (straight-use-package p))
+
+  (straight-use-package '(openai :type git :host github :repo "emacs-openai/openai"))
+  (straight-use-package '(chatgpt :type git :host github :repo "emacs-openai/chatgpt"))
+
+  (straight-use-package '(ruby-ts-mode :type git :host github :repo "pedz/ruby-ts-mode"))
 #+END_SRC
 ** Load unpackaged emacs lisp
 #+BEGIN_SRC emacs-lisp
@@ -211,6 +219,10 @@ More efficient intra-buffer navigation.
 
   (global-set-key (kbd "M-c") 'my-copy-to-clipboard)
 #+END_SRC
+** Use Command as meta without remapping/rebinding
+#+begin_src emacs-lisp
+  (setq mac-command-modifier 'meta)
+#+end_src
 ** Tab bar format
 #+begin_src emacs-lisp
   (setq tab-bar-format '(tab-bar-format-global))
@@ -299,6 +311,11 @@ Create keybinding for code-review at point
   (setq org-roam-directory (file-truename "~/notes"))
   (org-roam-db-autosync-mode)
 #+end_src
+* Chatgpt
+#+begin_src emacs-lisp
+  (require 'chatgpt)
+  (setq openai-key (getenv "OPENAI_API_KEY"))
+#+end_src
 * Programming
 ** General
 *** lsp mode
@@ -314,6 +331,15 @@ slow buffer responsiveness while editing..
 #+BEGIN_SRC emacs-lisp
   (setq lsp-completion-enable nil)
 #+END_SRC
+
+#+begin_src emacs-lisp
+  (require 'lsp-mode)
+#+end_src
+
+Register ruby-ts-mode with lsp
+#+begin_src emacs-lisp
+  (add-to-list 'lsp-language-id-configuration '(ruby-ts-mode . "ruby"))
+#+end_src
 
 *** Tabs
 Use 4 spaces instead of a tab.
@@ -401,7 +427,6 @@ web-mode.el is an autonomous major-mode for editing web templates.
 ** terraform
 Register the terraform language server
 #+begin_src emacs-lisp
-  (require 'lsp-mode)
   (lsp-register-client
    (make-lsp-client :new-connection (lsp-stdio-connection '("/usr/local/bin/terraform-ls" "serve"))
                     :major-modes '(terraform-mode)
@@ -416,39 +441,36 @@ Register the terraform language server
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-  (require 'typescript-mode)
-  (setq typescript-indent-level 2)
+  ;(require 'typescript-mode)
+  ;(setq typescript-indent-level 2)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
-  (add-to-list 'auto-mode-alist '("\\.cjs\\'" . js-mode))
-  (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
+  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.cjs\\'" . js-ts-mode))
+  ;(add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
+  (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-ts-mode))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-  (add-hook 'js-mode-hook 'lsp)
-  (add-hook 'typescript-mode-hook 'lsp)
+  (add-hook 'js-ts-mode-hook 'lsp)
+  ;(add-hook 'typescript-mode-hook 'lsp)
+  (add-hook 'typescript-ts-mode-hook 'lsp)
   (add-hook 'rust-mode-hook 'lsp)
 #+END_SRC
 *** Require eslint-flymake
 #+BEGIN_SRC emacs-lisp
   (require 'flymake-eslint)
 #+END_SRC
-*** Set up js-doc
-#+BEGIN_SRC emacs-lisp
-  (require 'js-doc)
-  (define-key typescript-mode-map (kbd "C-c i") 'js-doc-insert-function-doc)
-#+END_SRC
 ** ruby
-Use ruby-mode for *.rb
+Use treesitter's ruby-mode for *.rb
 #+BEGIN_SRC emacs-lisp
-  (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-mode))
+  (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-ts-mode))
 #+END_SRC
 
 
 #+BEGIN_SRC emacs-lisp
-  (add-hook 'ruby-mode-hook 'lsp)
+  (add-hook 'ruby-ts-mode-hook 'lsp)
 #+END_SRC
 ** rust
 #+BEGIN_SRC emacs-lisp
@@ -468,6 +490,8 @@ Use ruby-mode for *.rb
 #+BEGIN_SRC emacs-lisp
   (require 'perspective)
   (customize-set-variable 'persp-mode-prefix-key (kbd "C-z"))
+  (define-key persp-mode-map (kbd "C-x C-n") 'persp-next)
+  (define-key persp-mode-map (kbd "C-x C-p") 'persp-prev)
 #+END_SRC
 
 ** projectile
