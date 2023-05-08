@@ -57,7 +57,8 @@ down in this file, some are used with the default configuration.
                         atom-one-dark-theme
                         csv-mode
                         graphql-mode
-                        company-mode
+                        corfu
+                        cape
                         ))
 #+END_SRC
 ** Install packages
@@ -269,6 +270,19 @@ capable counterparts
 
 #+END_SRC
 
+* Corfu
+#+begin_src emacs-lisp
+  (setq corfu-auto t)
+  (setq corfu-cycle t)
+#+end_src
+
+* Cape
+#+begin_src emacs-lisp
+  (setq corfu-auto t)
+  (setq corfu-cycle t)
+  (global-corfu-mode)
+#+end_src
+
 * Magit
 ** forge
 Load forge after magit
@@ -329,7 +343,8 @@ Turn off lsp's completion engine, because it seems to significantly
 slow buffer responsiveness while editing..
 
 #+BEGIN_SRC emacs-lisp
-  (setq lsp-completion-enable nil)
+  (setq lsp-completion-provider :corfu)
+  (setq lsp-completion-enable t)
 #+END_SRC
 
 #+begin_src emacs-lisp
@@ -438,6 +453,8 @@ Register the terraform language server
 *** General configuration
 #+BEGIN_SRC emacs-lisp
   (setq js-indent-level 2)
+  (setq typescript-ts-mode-indent-offset 2)
+  (setq js-ts-mode-indent-offset 2)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
