@@ -332,6 +332,21 @@ Create keybinding for code-review at point
 #+end_src
 * Programming
 ** General
+*** compilation mode
+The `compilation-filter-hook` is a hook function run after the output of
+a command run in a compilation buffer has been inserted. The hook
+function, `ansi-color-compilation-filter`, processes the compilation
+output and applies ANSI color codes to the output according to the
+terminal color codes.
+
+The effect of this configuration is that when you run a command that
+outputs colored text in an Emacs buffer (such as a compilation buffer
+or shell buffer), the output will be colored according to the ANSI
+color codes. This makes it easier to read and interpret the output.
+
+#+begin_src emacs-lisp
+  (add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
+#+end_src
 *** lsp mode
 Set the keymap prefix for lsp commands
 
@@ -439,6 +454,20 @@ web-mode.el is an autonomous major-mode for editing web templates.
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
   (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode))
 #+END_SRC
+** graphql
+Use graphql-mode for graphql files
+#+begin_src emacs-lisp
+  (add-to-list 'auto-mode-alist '("\\.graphql\\'" . graphql-mode))
+  (add-to-list 'auto-mode-alist '("\\.graphqls\\'" . graphql-mode))
+#+end_src
+Register the graphql language server
+  #+begin_src emacs-lisp
+  ;(lsp-register-client
+  ; (make-lsp-client :new-connection (lsp-stdio-connection '("graphql-lsp" "server"))
+  ;                  :major-modes '(graphql-mode)
+  ;                  :server-id 'graphql-ls))
+  ;(add-hook 'terraform-mode-hook #'lsp)
+  #+end_src
 ** terraform
 Register the terraform language server
 #+begin_src emacs-lisp
