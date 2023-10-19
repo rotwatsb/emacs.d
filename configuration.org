@@ -29,9 +29,7 @@ List all used third-party packages. Most will be configured further
 down in this file, some are used with the default configuration.
 
 #+BEGIN_SRC emacs-lisp
-  (defvar my-packages '(lsp-mode
-                        lsp-ui
-                        request
+  (defvar my-packages '(request
                         flx-ido
                         exec-path-from-shell
                         flymake-eslint
@@ -48,7 +46,6 @@ down in this file, some are used with the default configuration.
                         prettier
                         rust-mode
                         terraform-mode
-                        lsp-pyright
                         org-bullets
                         org-roam
                         forge
@@ -70,6 +67,7 @@ down in this file, some are used with the default configuration.
   (straight-use-package '(chatgpt :type git :host github :repo "emacs-openai/chatgpt"))
 
   (straight-use-package '(ruby-ts-mode :type git :host github :repo "pedz/ruby-ts-mode"))
+  (straight-use-package '(combobulate :type git :host github :repo "mickeynp/combobulate"))
 #+END_SRC
 ** Load unpackaged emacs lisp
 #+BEGIN_SRC emacs-lisp
@@ -274,13 +272,12 @@ capable counterparts
 #+begin_src emacs-lisp
   (setq corfu-auto t)
   (setq corfu-cycle t)
+  (global-corfu-mode)
 #+end_src
 
 * Cape
 #+begin_src emacs-lisp
-  (setq corfu-auto t)
-  (setq corfu-cycle t)
-  (global-corfu-mode)
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
 #+end_src
 
 * Magit
@@ -347,30 +344,6 @@ color codes. This makes it easier to read and interpret the output.
 #+begin_src emacs-lisp
   (add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
 #+end_src
-*** lsp mode
-Set the keymap prefix for lsp commands
-
-#+BEGIN_SRC emacs-lisp
-  (setq lsp-keymap-prefix "C-c l")
-#+END_SRC
-
-Turn off lsp's completion engine, because it seems to significantly
-slow buffer responsiveness while editing..
-
-#+BEGIN_SRC emacs-lisp
-  (setq lsp-completion-provider :corfu)
-  (setq lsp-completion-enable t)
-#+END_SRC
-
-#+begin_src emacs-lisp
-  (require 'lsp-mode)
-#+end_src
-
-Register ruby-ts-mode with lsp
-#+begin_src emacs-lisp
-  (add-to-list 'lsp-language-id-configuration '(ruby-ts-mode . "ruby"))
-#+end_src
-
 *** Tabs
 Use 4 spaces instead of a tab.
 
@@ -424,6 +397,33 @@ Enable git-link globally and bind to (=C-cgl)
   (setq git-link-default-remote "origin")
   (global-set-key "\C-cgl" 'git-link)
 #+END_SRC
+** tree-sitter
+#+begin_src emacs-lisp
+  (require 'treesit)
+  (defun mp-setup-install-grammars ()
+    "Install Tree-sitter grammars if they are absent."
+    (interactive)
+    (dolist (grammar
+             '((css "https://github.com/tree-sitter/tree-sitter-css")
+               (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript" "master" "src"))
+               (python "https://github.com/tree-sitter/tree-sitter-python")
+               (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src"))
+               (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+      (add-to-list 'treesit-language-source-alist grammar)
+      ;; Only install `grammar' if we don't already have it
+      ;; installed. However, if you want to *update* a grammar then
+      ;; this obviously prevents that from happening.
+      (unless (treesit-language-available-p (car grammar))
+        (treesit-install-language-grammar (car grammar)))))
+
+  (mp-setup-install-grammars)
+#+end_src
+** combobulate
+#+begin_src emacs-lisp
+  (require 'combobulate)
+  (setq combobulate-key-prefix "C-c o")
+  (add-hook 'typescript-ts-mode-hook 'combobulate-mode)
+#+end_src
 ** web-mode
 
 http://web-mode.org/
@@ -460,30 +460,14 @@ Use graphql-mode for graphql files
   (add-to-list 'auto-mode-alist '("\\.graphql\\'" . graphql-mode))
   (add-to-list 'auto-mode-alist '("\\.graphqls\\'" . graphql-mode))
 #+end_src
-Register the graphql language server
-  #+begin_src emacs-lisp
-  ;(lsp-register-client
-  ; (make-lsp-client :new-connection (lsp-stdio-connection '("graphql-lsp" "server"))
-  ;                  :major-modes '(graphql-mode)
-  ;                  :server-id 'graphql-ls))
-  ;(add-hook 'terraform-mode-hook #'lsp)
-  #+end_src
-** terraform
-Register the terraform language server
-#+begin_src emacs-lisp
-  (lsp-register-client
-   (make-lsp-client :new-connection (lsp-stdio-connection '("/usr/local/bin/terraform-ls" "serve"))
-                    :major-modes '(terraform-mode)
-                    :server-id 'terraform-ls))
-
-  (add-hook 'terraform-mode-hook #'lsp)
-#+end_src
 ** javascript
 *** General configuration
 #+BEGIN_SRC emacs-lisp
   (setq js-indent-level 2)
   (setq typescript-ts-mode-indent-offset 2)
   (setq js-ts-mode-indent-offset 2)
+  (add-hook 'js-ts-mode-hook 'eglot-ensure)
+  (add-hook 'typescript-ts-mode-hook 'eglot-ensure)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -497,13 +481,6 @@ Register the terraform language server
   ;(add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
   (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-ts-mode))
 #+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'js-ts-mode-hook 'lsp)
-  ;(add-hook 'typescript-mode-hook 'lsp)
-  (add-hook 'typescript-ts-mode-hook 'lsp)
-  (add-hook 'rust-mode-hook 'lsp)
-#+END_SRC
 *** Require eslint-flymake
 #+BEGIN_SRC emacs-lisp
   (require 'flymake-eslint)
@@ -514,10 +491,10 @@ Use treesitter's ruby-mode for *.rb
   (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-ts-mode))
 #+END_SRC
 
-
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'ruby-ts-mode-hook 'lsp)
-#+END_SRC
+Use eglot lsp server with ruby
+#+begin_src emacs-lisp
+  (add-hook 'ruby-ts-mode-hook 'eglot-ensure)
+#+end_src
 ** rust
 #+BEGIN_SRC emacs-lisp
   (add-hook 'rust-mode-hook
@@ -527,9 +504,7 @@ Use treesitter's ruby-mode for *.rb
 #+END_SRC
 ** python
 #+begin_src emacs-lisp
-  (add-hook 'python-mode-hook (lambda ()
-                                (require 'lsp-pyright)
-                                (lsp)))
+  (add-hook 'python-mode-hook 'eglot-ensure)
 #+end_src
 ** perspectives
 *** Configuration
@@ -604,16 +579,14 @@ After persp switch, set default-directory of new scratch buffer and call find-fi
       (set-buffer (persp-scratch-buffer))
       (setq default-directory (car args))
       (call-interactively #'find-file)))
-   (advice-add 'projectile-persp-switch-project :around #'my-projectile-persp-switch-project)
+  (advice-add 'projectile-persp-switch-project :around #'my-projectile-persp-switch-project)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-(defun projectile-nodeunit-test-file ()
-  "Run test command on a single file"
-  (interactive)
-  (let ((command (concat "NODE_ENV=test ALLOW_CONFIG_MUTATIONS=y node_modules/nodeunit/bin/nodeunit " (buffer-file-name)))
-        (default-directory (projectile-compilation-dir)))
-    (compile command)))
+  (defun my-perspective-buffer-name (orig-fun &rest args)
+    (concat (apply orig-fun args) " (" (persp-current-name) ")"))
+
+  (advice-add 'compilation--default-buffer-name :around #'my-perspective-buffer-name)
 #+END_SRC
 
 * eshell
