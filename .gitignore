@@ -17,3 +17,5 @@ network-security.data
 straight/build
 straight/repos
 straight/build-cache.el
+org-persist
+.org-id-locations
