@@ -30,44 +30,45 @@ down in this file, some are used with the default configuration.
 
 #+BEGIN_SRC emacs-lisp
   (defvar my-packages '(request
-                        flx-ido
-                        exec-path-from-shell
-                        flymake-eslint
-                        projectile
-                        markdown-mode
-                        magit
-                        magit-popup
-                        git-link
-                        perspective
-                        persp-projectile
-                        web-mode
-                        yasnippet
-                        which-key
-                        prettier
-                        rust-mode
-                        terraform-mode
-                        org-bullets
-                        org-roam
-                        forge
-                        code-review
-                        solarized-theme
-                        atom-one-dark-theme
-                        csv-mode
-                        graphql-mode
-                        corfu
-                        cape
-                        ))
+            flx-ido
+            exec-path-from-shell
+            flymake-eslint
+            projectile
+            markdown-mode
+            magit
+            magit-popup
+            git-link
+            perspective
+            persp-projectile
+            web-mode
+            yasnippet
+            which-key
+            prettier
+            rust-mode
+            terraform-mode
+            org-bullets
+            org-roam
+            forge
+            code-review
+            solarized-theme
+            atom-one-dark-theme
+            csv-mode
+            graphql-mode
+            corfu
+            cape
+            plantuml-mode
+            envrc
+            gptel
+            ))
 #+END_SRC
 ** Install packages
 #+BEGIN_SRC emacs-lisp
   (dolist (p my-packages)
     (straight-use-package p))
 
-  (straight-use-package '(openai :type git :host github :repo "emacs-openai/openai"))
-  (straight-use-package '(chatgpt :type git :host github :repo "emacs-openai/chatgpt"))
-
   (straight-use-package '(ruby-ts-mode :type git :host github :repo "pedz/ruby-ts-mode"))
   (straight-use-package '(combobulate :type git :host github :repo "mickeynp/combobulate"))
+  (straight-use-package '(emacs-prisma-mode :type git :host github :repo "pimeys/emacs-prisma-mode"))
 #+END_SRC
 ** Load unpackaged emacs lisp
 #+BEGIN_SRC emacs-lisp
@@ -333,10 +334,18 @@ Create keybinding for code-review at point
   (setq org-roam-db-location (file-truename "~/notes/org-roam.db"))
   (org-roam-db-autosync-mode)
 #+end_src
-* Chatgpt
+* GPTEL
+** Set openai api key
 #+begin_src emacs-lisp
-  (require 'chatgpt)
-  (setq openai-key (getenv "OPENAI_API_KEY"))
+  (defun gptel-api-key() (getenv "OPENAI_API_KEY"))
+  (define-prefix-command 'gptel-prefix-map)
+
+  (global-set-key (kbd "C-x C-g") 'gptel-prefix-map)
+
+  (define-key gptel-prefix-map (kbd "a") 'gptel-add)
+  (define-key gptel-prefix-map (kbd "s") 'gptel-send)
+  (define-key gptel-prefix-map (kbd "r") 'gptel-rewrite)
+  (define-key gptel-prefix-map (kbd "c") 'gptel-context-remove-all)
 #+end_src
 * Programming
 ** General
@@ -450,9 +459,9 @@ Enable git-link globally and bind to (=C-cgl)
 #+end_src
 ** combobulate
 #+begin_src emacs-lisp
-  (require 'combobulate)
-  (setq combobulate-key-prefix "C-c o")
-  (add-hook 'typescript-ts-mode-hook 'combobulate-mode)
+  ;;(require 'combobulate)
+  ;;(setq combobulate-key-prefix "C-c o")
+  ;;(add-hook 'typescript-ts-mode-hook 'combobulate-mode)
 #+end_src
 ** web-mode
 
@@ -573,9 +582,12 @@ Register ember project type.
 Register npm project type.
 #+BEGIN_SRC emacs-lisp
   (projectile-register-project-type
-   'npm '(".package.json")
+   'yarn '("package.json")
+   :project-file "package.json"
+   :compile "npm install"
    :test "npm test"
-   :test-suffix "Test")
+   :run "npm start"
+   :test-suffix ".test")
 #+END_SRC
 
 Wrap 'projectile-find-implementation-or-test' to cache looked-up
@@ -631,5 +643,6 @@ After persp switch, set default-directory of new scratch buffer and call find-fi
 ** Linux
 ** macOS
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "<f11>") 'toggle-frame-fullscreen)
+  (global-set-key (kbd "<f11>") 'toggle-frame-fullscreen)
+  (envrc-global-mode)
 #+END_SRC
