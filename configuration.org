@@ -59,6 +59,7 @@ down in this file, some are used with the default configuration.
             plantuml-mode
             envrc
             gptel
+            elixir-ts-mode
             ))
 #+END_SRC
 ** Install packages
@@ -69,6 +70,7 @@ down in this file, some are used with the default configuration.
   (straight-use-package '(ruby-ts-mode :type git :host github :repo "pedz/ruby-ts-mode"))
   (straight-use-package '(combobulate :type git :host github :repo "mickeynp/combobulate"))
   (straight-use-package '(emacs-prisma-mode :type git :host github :repo "pimeys/emacs-prisma-mode"))
+  (straight-use-package '(mcp :type git :host github :repo "lizqwerscott/mcp.el"))
 #+END_SRC
 ** Load unpackaged emacs lisp
 #+BEGIN_SRC emacs-lisp
@@ -262,7 +264,6 @@ everywhere.
   (setq ido-enable-flex-matching t)
   (global-set-key (kbd "C-x C-b") 'ibuffer)
 #+END_SRC
-
 * Search
 Replace i-search-(forward|backward) with their respective regexp
 capable counterparts
@@ -334,10 +335,26 @@ Create keybinding for code-review at point
   (setq org-roam-db-location (file-truename "~/notes/org-roam.db"))
   (org-roam-db-autosync-mode)
 #+end_src
-* GPTEL
-** Set openai api key
+* MCP
 #+begin_src emacs-lisp
-  (defun gptel-api-key() (getenv "OPENAI_API_KEY"))
+  (require 'mcp-hub)
+  (setq mcp-hub-servers
+        '(
+          ("filesystem" . (:command "npx" :args ("-y" "@modelcontextprotocol/server-filesystem" "~/plc")))
+          )
+        )
+#+end_src
+* GPTEL
+
+** Set openai api key
+
+#+begin_src emacs-lisp
+  (require 'gptel)
+  ;; (defun gptel-api-key() (getenv "OPENAI_API_KEY"))
+
+  (setq auth-source-debug t)
+
+
   (define-prefix-command 'gptel-prefix-map)
 
   (global-set-key (kbd "C-x C-g") 'gptel-prefix-map)
@@ -346,6 +363,174 @@ Create keybinding for code-review at point
   (define-key gptel-prefix-map (kbd "s") 'gptel-send)
   (define-key gptel-prefix-map (kbd "r") 'gptel-rewrite)
   (define-key gptel-prefix-map (kbd "c") 'gptel-context-remove-all)
+#+end_src
+** Advise gptel to create buffers with default directory
+#+begin_src emacs-lisp
+  (defun my-gptel-advice (orig-fun &rest args)
+    (interactive)
+    "Advise `gptel` to include the `default-directory` in the buffer name."
+    (let ((directory-name (file-name-nondirectory (directory-file-name default-directory)))
+          (name (or (car args) "gptel")))  ; Assuming the first argument is `name`
+      ;; Modify the name to include the default-directory
+      (unless (string-prefix-p "*" name) ;; Prevent modifying existing buffers
+        (setq name (format "*%s-%s*" directory-name name)))
+      ;; Call the original gptel function with the modified name
+      (let ((buf (apply orig-fun (cons name (cdr args)))))
+        (persp-add-buffer buf)
+        
+        (switch-to-buffer buf)
+        (hack-dir-local-variables-non-file-buffer)
+        buf)
+      ))
+
+  (advice-add 'gptel :around #'my-gptel-advice)
+#+end_src
+** Integrate gptel with mcp tools
+For registering all MCP tools:
+#+begin_src emacs-lisp
+  (defun gptel-mcp-register-tool ()
+    (interactive)
+    (let ((tools (mcp-hub-get-all-tool :asyncp t :categoryp t)))
+      (mapcar #'(lambda (tool)
+                  (apply #'gptel-make-tool
+                         tool))
+              tools)))
+#+end_src
+
+For activating all MCP tools using gptel
+#+begin_src emacs-lisp
+  (defun gptel-mcp-use-tool ()
+    (interactive)
+    (let ((tools (mcp-hub-get-all-tool :asyncp t :categoryp t)))
+      (mapcar #'(lambda (tool)
+                  (let ((path (list (plist-get tool :category)
+                                    (plist-get tool :name))))
+                    (push (gptel-get-tool path)
+                          gptel-tools)))
+              tools)))
+#+end_src
+
+Request gptel to cease using all mcp tools
+#+begin_src emacs-lisp
+  (defun gptel-mcp-close-use-tool ()
+    (interactive)
+    (let ((tools (mcp-hub-get-all-tool :asyncp t :categoryp t)))
+      (mapcar #'(lambda (tool)
+                  (let ((path (list (plist-get tool :category)
+                                    (plist-get tool :name))))
+                    (setq gptel-tools
+                          (cl-remove-if #'(lambda (tool)
+                                            (equal path
+                                                   (list (gptel-tool-category tool)
+                                                         (gptel-tool-name tool))))
+                                        gptel-tools))))
+              tools)))
+#+end_src
+
+** Non-mcp tools
+read_buffer
+#+begin_src emacs-lisp
+  (gptel-make-tool
+   :function (lambda (buffer)
+               (unless (buffer-live-p (get-buffer buffer))
+                 (error "Error: buffer %s is not live." buffer))
+               (with-current-buffer buffer
+                 (buffer-substring-no-properties (point-min) (point-max))))
+   :name "read_buffer"
+   :description "Return the contents of an Emacs buffer"
+   :args (list '(:name "buffer"
+                       :type string
+                       :description "The name of the buffer whose contents are to be retrieved"))
+   :category "emacs")
+#+end_src
+
+appeand_to_buffer
+#+begin_src emacs-lisp
+  (gptel-make-tool
+   :function (lambda (buffer text)
+               (with-current-buffer (get-buffer-create buffer)
+                 (save-excursion
+                   (goto-char (point-max))
+                   (insert text)))
+               (format "Appended text to buffer %s" buffer))
+   :name "append_to_buffer"
+   :description "Append text to an Emacs buffer. If the buffer does not exist, it will be created."
+   :args (list '(:name "buffer"
+                       :type string
+                       :description "The name of the buffer to append text to.")
+               '(:name "text"
+                       :type string
+                       :description "The text to append to the buffer."))
+   :category "emacs")
+#+end_src
+
+edit_buffer
+#+begin_src emacs-lisp
+  (defun codel-edit-buffer (buffer-name old-string new-string)
+    "In BUFFER-NAME, replace OLD-STRING with NEW-STRING."
+    (with-current-buffer buffer-name
+      (let ((case-fold-search nil))  ;; Case-sensitive search
+        (save-excursion
+          (goto-char (point-min))
+          (let ((count 0))
+            (while (search-forward old-string nil t)
+              (setq count (1+ count)))
+            (if (= count 0)
+                (format "Error: Could not find text to replace in buffer %s" buffer-name)
+              (if (> count 1)
+                  (format "Error: Found %d matches for the text to replace in buffer %s" count buffer-name)
+                (goto-char (point-min))
+                (search-forward old-string)
+                (replace-match new-string t t)
+                (format "Successfully edited buffer %s" buffer-name))))))))
+
+  (gptel-make-tool
+   :name "edit_buffer"
+   :function #'codel-edit-buffer
+   :description "Edits Emacs buffers"
+   :args '((:name "buffer_name"
+                  :type string
+                  :description "Name of the buffer to modify"
+                  :required t)
+           (:name "old_string"
+                  :type string
+                  :description "Text to replace (must match exactly)"
+                  :required t)
+           (:name "new_string"
+                  :type string
+                  :description "Text to replace old_string with"
+                  :required t))
+   :category "edit")
+
+  (gptel-make-tool
+   :name "find_definition"
+   :function (lambda (file line col)
+               (let* ((method "textDocument/definition")
+                      (params '((:textDocument (:uri (concat "file://" file))
+                                               :position (:line line :character col))))
+                      (result (jsonrpc-request
+                               (eglot--current-server-or-lose)
+                               method params)))
+                 (if (vectorp result)
+                     (format "Found definition at: %s" (mapconcat #'prin1-to-string result ", "))
+                   (format "Error finding definition: %s" result))))
+   :description "Find the definition of a symbol in a file"
+   :args '((:name "file"
+                  :type string
+                  :description "Absolute path to file"
+                  :required t)
+           (:name "line"
+                  :type integer
+                  :description "Line number in file of symbol to find definition of"
+                  :required t)
+           (:name "col"
+                  :type integer
+                  :description "Line position (column) in file row of symbol to find definition of"
+                  :required t))
+   :category "eglot")
+  
+
+
 #+end_src
 * Programming
 ** General
@@ -379,7 +564,8 @@ Tell compilation mode how to handle eslint output in compilation mode.
          '(
            (eslint-line "^[[[[:space:]]]]+\\([0-9]+\\):\\([0-9]+\\)[[[[:space:]]]]+\\(?:\\(warning\\)\\|\\(info\\)\\).*$" nil 1 2 (3 . 4))
            (eslint-file "^\\(/.+\\.[a-z]+\\)$" 1 nil nil)
-           (my-typescript-tsc-pretty "^\\\s+\\(.*\\):\\([0-9]+\\):\\([0-9]+\\).*" 1 2 3 2))))
+           (my-typescript-tsc-pretty "^\\\s+\\(.*\\):\\([0-9]+\\):\\([0-9]+\\).*" 1 2 3 2)
+           (jest-file-line "^[[[[:space:]]]]+at[^()]*(\\(.+\\):\\([0-9]+\\):\\([0-9]+\\))$" (1 ("%s" default-directory)) 2 3 2))))
     (dolist (pat compilation-patterns)
       (add-compilation-pattern pat)))
 #+end_src
@@ -447,7 +633,9 @@ Enable git-link globally and bind to (=C-cgl)
                (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript" "master" "src"))
                (python "https://github.com/tree-sitter/tree-sitter-python")
                (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src"))
-               (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+               (yaml "https://github.com/ikatyang/tree-sitter-yaml")
+               (heex "https://github.com/phoenixframework/tree-sitter-heex")
+               (elixir "https://github.com/elixir-lang/tree-sitter-elixir")))
       (add-to-list 'treesit-language-source-alist grammar)
       ;; Only install `grammar' if we don't already have it
       ;; installed. However, if you want to *update* a grammar then
@@ -517,6 +705,9 @@ Use graphql-mode for graphql files
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.js\\'" . js-ts-mode))
   (add-to-list 'auto-mode-alist '("\\.cjs\\'" . js-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.mjs\\'" . js-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.ex\\'" . elixir-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.exs\\'" . elixir-ts-mode))
   ;(add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
   (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-ts-mode))
 #+END_SRC
