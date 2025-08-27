@@ -16,11 +16,7 @@ Windows, look it up [[https://www.gnu.org/software/emacs/manual/html_node/efaq-w
 
 *Dependencies*
 
-Emacs dependencies/libraries are managed via the internal [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Packages.html#Packages][package
-management system]]. To initially install packages, open
-=~/.emacs.d/init.el=, refresh your package list with =M-x
-package-refresh-contents= and install everything using =M-x
-eval-buffer=.
+Emacs dependencies/libraries are managed with the straight package manager.
 
 * Dependency management
 ** Define packages that are to be installed
@@ -63,6 +59,14 @@ down in this file, some are used with the default configuration.
             ))
 #+END_SRC
 ** Install packages
+First tell straight that we should use the built-in version of org-roam
+
+#+BEGIN_SRC emacs-lisp
+  (straight-use-package '(org :type built-in))
+#+END_SRC
+
+Now install other packages
+
 #+BEGIN_SRC emacs-lisp
   (dolist (p my-packages)
     (straight-use-package p))
@@ -71,28 +75,7 @@ down in this file, some are used with the default configuration.
   (straight-use-package '(combobulate :type git :host github :repo "mickeynp/combobulate"))
   (straight-use-package '(emacs-prisma-mode :type git :host github :repo "pimeys/emacs-prisma-mode"))
   (straight-use-package '(mcp :type git :host github :repo "lizqwerscott/mcp.el"))
-#+END_SRC
-** Load unpackaged emacs lisp
-#+BEGIN_SRC emacs-lisp
-  (setq
-    elisp-dir
-    (concat
-      (getenv "HOME")
-      "/.emacs.d/elisp/"))
-
-  (defun get-elisp-subdirs ()
-    (seq-filter
-      (lambda (dirname) (and (not (equal dirname ".")) (not (equal dirname ".."))))
-      (directory-files elisp-dir)))
-
-  (dolist
-    (uelisp (get-elisp-subdirs))
-    (progn
-      (add-to-list
-        'load-path
-        (concat
-          elisp-dir
-          uelisp))))
+  (straight-use-package '(yaml-mode :type git :host github :repo "yoshiki/yaml-mode"))
 #+END_SRC
 * Default Settings
 This section contains settings for built-in Emacs features.
@@ -678,8 +661,8 @@ web-mode.el is an autonomous major-mode for editing web templates.
 #+BEGIN_SRC emacs-lisp
   (require 'yaml-mode)
 
-  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
-  (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode))
+  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-ts-mode))
 #+END_SRC
 ** graphql
 Use graphql-mode for graphql files
@@ -706,15 +689,23 @@ Use graphql-mode for graphql files
   (add-to-list 'auto-mode-alist '("\\.js\\'" . js-ts-mode))
   (add-to-list 'auto-mode-alist '("\\.cjs\\'" . js-ts-mode))
   (add-to-list 'auto-mode-alist '("\\.mjs\\'" . js-ts-mode))
-  (add-to-list 'auto-mode-alist '("\\.ex\\'" . elixir-ts-mode))
-  (add-to-list 'auto-mode-alist '("\\.exs\\'" . elixir-ts-mode))
-  ;(add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
   (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . tsx-ts-mode))
 #+END_SRC
 *** Require eslint-flymake
 #+BEGIN_SRC emacs-lisp
   (require 'flymake-eslint)
 #+END_SRC
+** elixir
+#+begin_src emacs-lisp
+  (require 'eglot)
+  (add-to-list 'auto-mode-alist '("\\.ex\\'" . elixir-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.exs\\'" . elixir-ts-mode))
+
+  (add-to-list 'eglot-server-programs '(elixir-ts-mode "~/.emacs.d/language-servers/elixir-ls-v0/language_server.sh"))
+  (add-hook 'elixir-ts-mode-hook 'eglot-ensure)
+
+#+end_src
 ** ruby
 Use treesitter's ruby-mode for *.rb
 #+BEGIN_SRC emacs-lisp

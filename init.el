@@ -21,8 +21,6 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-(straight-use-package 'org)
-
 ;; This loads the actual configuration in literate org-mode elisp
 (defun load-config()
   (interactive)

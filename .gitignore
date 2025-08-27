@@ -20,3 +20,4 @@ straight/build-cache.el
 org-persist
 .org-id-locations
 .DS_Store
+*.dylib
