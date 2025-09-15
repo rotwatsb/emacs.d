@@ -68,6 +68,8 @@ First tell straight that we should use the built-in version of org-roam
 Now install other packages
 
 #+BEGIN_SRC emacs-lisp
+  (straight-use-package '(deflate :type git :host github :repo "skuro/deflate"))
+
   (dolist (p my-packages)
     (straight-use-package p))
 
@@ -192,7 +194,7 @@ More efficient intra-buffer navigation.
   (define-key global-map (kbd "M-n") (lambda () (interactive) (forward-line 4)))
 #+END_SRC
 
-** set default them
+** Default theme
 #+BEGIN_SRC emacs-lisp
   (load-theme 'atom-one-dark t)
 #+END_SRC
@@ -208,14 +210,28 @@ More efficient intra-buffer navigation.
 
   (global-set-key (kbd "M-c") 'my-copy-to-clipboard)
 #+END_SRC
-** Use Command as meta without remapping/rebinding
+** Use Command as Meta without remapping/rebinding
 #+begin_src emacs-lisp
   (setq mac-command-modifier 'meta)
 #+end_src
-** Tab bar format
+** Tab Bar Format
+Display the global mode string in the tab bar
 #+begin_src emacs-lisp
   (setq tab-bar-format '(tab-bar-format-global))
   (tab-bar-mode)
+#+end_src
+* Plantuml Mode
+#+begin_src emacs-lisp
+  (setq plantuml-executable-path "plantuml")
+  (setq plantuml-default-exec-mode 'executable)
+  (plantuml-set-output-type "png")
+#+end_src
+* Flyspell mode
+#+begin_src emacs-lisp
+  (setq ispell-dictionary "english")
+
+  (add-hook 'text-mode-hook 'flyspell-mode)
+  (add-hook 'prog-mode-hook 'flyspell-prog-mode)
 #+end_src
 * which-key mode
 Turn it on by default
@@ -267,10 +283,11 @@ capable counterparts
 * Cape
 #+begin_src emacs-lisp
   (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  (add-to-list 'completion-at-point-functions #'cape-dict)
 #+end_src
 
 * Magit
-** forge
+** Forge
 Load forge after magit
 
 #+begin_src emacs-lisp
@@ -292,40 +309,89 @@ Create keybinding for code-review at point
     (define-key forge-topic-mode-map (kbd "C-c r") 'code-review-forge-pr-at-point))
 #+end_src
 * Org
-  #+begin_src emacs-lisp
+#+begin_src emacs-lisp
+  (defun col-strip (col-str)
+    (butlast (split-string (mapconcat (lambda (x) (concat "#" x " "))
+                                      (split-string col-str "-")
+                                      "") " ")))
+  (setq color-schemes (list
+                       "d9ed92-99d98c-34a0a4-7696d0-83678e-c55969-ca6877"
+                       "acd322-4ba838-34a0a4-7696d0-83678e-c55969-ca6877"
+                       "e8e6a6-bbdca3-5fb5b9-9da5d2-ab7bad-d77984-db858f"
+                       "e5e3ab-bad6a6-6aacb0-a4aacd-a287a3-d27f89-d68b94"
+                       ))
+  (set-face-attribute 'outline-4 nil :slant 'normal)
+
+  (defvar current-color-scheme-index 0
+    "Index of the currently active color scheme in `color-schemes`.")
+
+  (defun apply-color-scheme (colors)
+    "Apply COLORS (a list of hex codes) to outline faces."
+    (dotimes (i (length colors))
+      (let ((face (intern (format "outline-%d" (1+ i))))
+            (col (nth i colors)))
+        (set-face-foreground face col))))
+
+  (defun apply-current-color-scheme ()
+    "Apply the color scheme at `current-color-scheme-index`."
+    (apply-color-scheme (col-strip (nth current-color-scheme-index color-schemes))))
+
+  (defun cycle-color-scheme ()
+    "Advance to the next color scheme in `color-schemes`, cycling back if needed."
+    (interactive)
+    (setq current-color-scheme-index
+          (mod (1+ current-color-scheme-index) (length color-schemes)))
+    (apply-current-color-scheme)
+    (message "Switched to color scheme %d" (1+ current-color-scheme-index)))
+
+  (with-eval-after-load 'org
+    (apply-current-color-scheme)
+
+    (define-key org-mode-map (kbd "M-n") 'org-forward-heading-same-level)
+    (define-key org-mode-map (kbd "M-p") 'org-backward-heading-same-level)
+    (define-key org-mode-map (kbd "C-M-n") 'org-next-visible-heading)
+    (define-key org-mode-map (kbd "C-M-p") 'org-previous-visible-heading)
+    (define-key org-mode-map (kbd "C-M-u") 'outline-up-heading)
+    (define-key org-mode-map (kbd "M-F") 'org-demote-subtree)
+    (define-key org-mode-map (kbd "M-B") 'org-promote-subtree)
+    (define-key org-mode-map (kbd "M-P") 'org-metaup)
+    (define-key org-mode-map (kbd "M-N") 'org-metadown))
+#+end_src
+
+#+begin_src emacs-lisp
+  (with-eval-after-load 'org
     (require 'org-bullets)
     (add-hook 'org-mode-hook
               (lambda ()
                 (auto-fill-mode 0)
                 (visual-line-mode 1)
                 (org-indent-mode)
-                (org-bullets-mode 1)))
-  #+end_src
+                (org-bullets-mode 1))))
+#+end_src
   
 ** Org Roam
 #+begin_src emacs-lisp
-  (require 'org-roam)
-  (define-key org-mode-map (kbd "C-c n i") 'org-roam-node-insert)
-  (define-key org-mode-map (kbd "C-c n l") 'org-roam-buffer-toggle)
-  (define-key org-mode-map (kbd "C-c n f") 'org-roam-node-find)
+  (with-eval-after-load 'org
+    (require 'org-roam)
+    (define-key org-mode-map (kbd "C-c n i") 'org-roam-node-insert)
+    (define-key org-mode-map (kbd "C-c n l") 'org-roam-buffer-toggle)
+    (define-key org-mode-map (kbd "C-c n f") 'org-roam-node-find)
 
-  (setq org-roam-capture-templates '(("d" "default" plain "%?"
-                                      :target (file+head "${slug}.org.gpg"
-                                                         "#+title: ${title}\n")
-                                      :unnarrowed t)))
+    (setq org-roam-capture-templates '(("d" "default" plain "%?"
+                                        :target (file+head "${slug}.org.gpg"
+                                                           "#+title: ${title}\n")
+                                        :unnarrowed t)))
 
-  (setq org-roam-directory (file-truename "~/notes"))
-  (setq org-roam-db-location (file-truename "~/notes/org-roam.db"))
-  (org-roam-db-autosync-mode)
+    (setq org-roam-directory (file-truename "~/notes"))
+    (setq org-roam-db-location (file-truename "~/notes/org-roam.db"))
+    (org-roam-db-autosync-mode))
 #+end_src
 * MCP
 #+begin_src emacs-lisp
-  (require 'mcp-hub)
-  (setq mcp-hub-servers
-        '(
-          ("filesystem" . (:command "npx" :args ("-y" "@modelcontextprotocol/server-filesystem" "~/plc")))
-          )
-        )
+  (with-eval-after-load 'mcp-hub
+    (setq mcp-hub-servers
+          '(
+            ("filesystem" . (:command "npx" :args ("-y" "@modelcontextprotocol/server-filesystem" "~/lib"))))))
 #+end_src
 * GPTEL
 
@@ -517,7 +583,7 @@ edit_buffer
 #+end_src
 * Programming
 ** General
-*** compilation mode
+*** Compilation Mode
 The `compilation-filter-hook` is a hook function run after the output of
 a command run in a compilation buffer has been inserted. The hook
 function, `ansi-color-compilation-filter`, processes the compilation
@@ -535,22 +601,22 @@ color codes. This makes it easier to read and interpret the output.
 
 Tell compilation mode how to handle eslint output in compilation mode.
 #+begin_src emacs-lisp
-  (require 'compile)
+  (with-eval-after-load 'compile
 
-  (defun add-compilation-pattern(pat)
-    (let ((alist-key (car pat)))
-      (progn
-        (setq compilation-error-regexp-alist-alist (cons pat compilation-error-regexp-alist-alist))
-        (setq compilation-error-regexp-alist (cons alist-key compilation-error-regexp-alist)))))
+    (defun add-compilation-pattern(pat)
+      (let ((alist-key (car pat)))
+        (progn
+          (setq compilation-error-regexp-alist-alist (cons pat compilation-error-regexp-alist-alist))
+          (setq compilation-error-regexp-alist (cons alist-key compilation-error-regexp-alist)))))
 
-  (let ((compilation-patterns
-         '(
-           (eslint-line "^[[[[:space:]]]]+\\([0-9]+\\):\\([0-9]+\\)[[[[:space:]]]]+\\(?:\\(warning\\)\\|\\(info\\)\\).*$" nil 1 2 (3 . 4))
-           (eslint-file "^\\(/.+\\.[a-z]+\\)$" 1 nil nil)
-           (my-typescript-tsc-pretty "^\\\s+\\(.*\\):\\([0-9]+\\):\\([0-9]+\\).*" 1 2 3 2)
-           (jest-file-line "^[[[[:space:]]]]+at[^()]*(\\(.+\\):\\([0-9]+\\):\\([0-9]+\\))$" (1 ("%s" default-directory)) 2 3 2))))
-    (dolist (pat compilation-patterns)
-      (add-compilation-pattern pat)))
+    (let ((compilation-patterns
+           '(
+             (eslint-line "^[[[[:space:]]]]+\\([0-9]+\\):\\([0-9]+\\)[[[[:space:]]]]+\\(?:\\(warning\\)\\|\\(info\\)\\).*$" nil 1 2 (3 . 4))
+             (eslint-file "^\\(/.+\\.[a-z]+\\)$" 1 nil nil)
+             (my-typescript-tsc-pretty "^\\\s+\\(.*\\):\\([0-9]+\\):\\([0-9]+\\).*" 1 2 3 2)
+             (jest-file-line "^[[[[:space:]]]]+at[^()]*(\\(.+\\):\\([0-9]+\\):\\([0-9]+\\))$" (1 ("%s" default-directory)) 2 3 2))))
+      (dolist (pat compilation-patterns)
+        (add-compilation-pattern pat))))
 #+end_src
 *** Tabs
 Use 4 spaces instead of a tab.
@@ -630,9 +696,13 @@ Enable git-link globally and bind to (=C-cgl)
 #+end_src
 ** combobulate
 #+begin_src emacs-lisp
-  ;;(require 'combobulate)
-  ;;(setq combobulate-key-prefix "C-c o")
-  ;;(add-hook 'typescript-ts-mode-hook 'combobulate-mode)
+  (add-hook 'typescript-ts-mode-hook 'combobulate-mode)
+  (add-hook 'tsx-ts-mode-hook 'combobulate-mode)
+  (require 'combobulate)
+  (define-key combobulate-key-map (kbd "M-n") #'combobulate-navigate-next)
+  (define-key combobulate-key-map (kbd "M-p") #'combobulate-navigate-previous)
+  (define-key combobulate-key-map (kbd "C-M-n") #'combobulate-navigate-down)
+  (define-key combobulate-key-map (kbd "C-M-p") #'combobulate-navigate-up)
 #+end_src
 ** web-mode
 
