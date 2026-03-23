@@ -56,6 +56,8 @@ down in this file, some are used with the default configuration.
             envrc
             gptel
             elixir-ts-mode
+            vterm
+            agent-shell
             ))
 #+END_SRC
 ** Install packages
@@ -78,6 +80,10 @@ Now install other packages
   (straight-use-package '(emacs-prisma-mode :type git :host github :repo "pimeys/emacs-prisma-mode"))
   (straight-use-package '(mcp :type git :host github :repo "lizqwerscott/mcp.el"))
   (straight-use-package '(yaml-mode :type git :host github :repo "yoshiki/yaml-mode"))
+  (straight-use-package '(elixir-ls :type git :host github :repo "elixir-lsp/elixir-ls" :tag "v0.30.0"))
+  ;; (straight-use-package '(org-jira :type git :host github :repo "ahungry/org-jira"))
+  (straight-use-package '(org-jira :type git :host github :repo "hansffu/org-jira"))
+
 #+END_SRC
 * Default Settings
 This section contains settings for built-in Emacs features.
@@ -220,18 +226,35 @@ Display the global mode string in the tab bar
   (setq tab-bar-format '(tab-bar-format-global))
   (tab-bar-mode)
 #+end_src
+* Org Jira
+Create the org-jira-working-dir directory:
+
+#+begin_src emacs-lisp
+  (make-directory "~/.org-jira" t)
+#+end_src
+
+Set jira url, and exclude the "reporter id" field from the update issue payload.
+
+#+begin_src emacs-lisp
+  (add-hook 'org-jira-mode-hook (lambda ()
+  				(setq jiralib-url "https://waymark-care.atlassian.net")
+  				(add-to-list 'jiralib-update-issue-fields-exclude-list 'reporter)))
+#+end_src
 * Plantuml Mode
 #+begin_src emacs-lisp
-  (setq plantuml-executable-path "plantuml")
-  (setq plantuml-default-exec-mode 'executable)
-  (plantuml-set-output-type "png")
+  (add-hook 'plantuml-mode-hook (lambda ()
+  				(setq plantuml-executable-path "plantuml")
+  				(setq plantuml-default-exec-mode 'executable)
+  				(plantuml-set-output-type "png")
+  				(org-bullets-mode 1)))
+
 #+end_src
 * Flyspell mode
 #+begin_src emacs-lisp
   (setq ispell-dictionary "english")
 
-  (add-hook 'text-mode-hook 'flyspell-mode)
-  (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+  ;(add-hook 'text-mode-hook 'flyspell-mode)
+  ;(add-hook 'prog-mode-hook 'flyspell-prog-mode)
 #+end_src
 * which-key mode
 Turn it on by default
@@ -393,6 +416,87 @@ Create keybinding for code-review at point
           '(
             ("filesystem" . (:command "npx" :args ("-y" "@modelcontextprotocol/server-filesystem" "~/lib"))))))
 #+end_src
+* vterm
+Advise vterm to create buffers with default directory in name, while adding the buffer to the active perspective
+
+#+begin_src emacs-lisp
+  (require 'vterm)
+
+  (defun my-vterm-advice (&optional arg)
+    "Override `vterm` to include `default-directory` in the buffer name."
+    (interactive "P")
+    (let* ((directory-name (file-name-nondirectory (directory-file-name default-directory)))
+           (name (format "*vterm-%s*" directory-name))
+           (buf (vterm--internal #'pop-to-buffer-same-window name)))
+      (persp-add-buffer buf)
+      (switch-to-buffer buf)
+      (hack-dir-local-variables-non-file-buffer)
+      buf))
+
+  (advice-add 'vterm :override #'my-vterm-advice)
+#+end_src
+
+Increase vterm scrollback.
+
+#+begin_src emacs-lisp
+  (setq vterm-max-scrollback 100000)
+#+end_src
+
+Keybindings for navigating vterm buffers within the current perspective.
+
+#+begin_src emacs-lisp
+    (defun my-persp-vterm-buffers ()
+      "Return vterm buffers in the current perspective, in buffer list order."
+      (cl-remove-if-not
+       (lambda (b) (eq (buffer-local-value 'major-mode b) 'vterm-mode))
+       (persp-current-buffers)))
+
+    (defun my-vterm-toggle ()
+      "Switch to the most recent vterm in the perspective, or create one.
+      If already in a vterm buffer, create a new one instead."
+      (interactive)
+      (if (eq major-mode 'vterm-mode)
+          (call-interactively #'vterm)
+        (let ((vterms (my-persp-vterm-buffers)))
+          (if vterms
+              (switch-to-buffer (car vterms))
+            (call-interactively #'vterm)))))
+
+    (defun my-vterm-cycle (direction)
+      "Cycle DIRECTION (+1 or -1) through vterm buffers in the current perspective."
+      (let* ((vterms (my-persp-vterm-buffers))
+             (len (length vterms)))
+        (cond
+         ((zerop len)
+          (message "No vterm buffers in this perspective."))
+         ((= len 1)
+          (switch-to-buffer (car vterms)))
+         (t
+          (let* ((idx (cl-position (current-buffer) vterms))
+                 (next-idx (if idx
+                               (mod (+ idx direction) len)
+                             (if (> direction 0) 0 (1- len)))))
+            (switch-to-buffer (nth next-idx vterms)))))))
+
+    (defun my-vterm-cycle-next ()
+      "Cycle to the next vterm buffer in the current perspective."
+      (interactive)
+      (my-vterm-cycle 1))
+
+    (defun my-vterm-cycle-prev ()
+      "Cycle to the previous vterm buffer in the current perspective."
+      (interactive)
+      (my-vterm-cycle -1))
+
+    (global-set-key (kbd "C-x v") 'my-vterm-toggle)
+
+    (with-eval-after-load 'vterm
+      (define-key vterm-mode-map (kbd "C-c C-n") #'my-vterm-cycle-next)
+      (define-key vterm-mode-map (kbd "C-c C-p") #'my-vterm-cycle-prev)
+      (define-key vterm-mode-map (kbd "M-n") #'vterm-next-prompt)
+      (define-key vterm-mode-map (kbd "M-p") #'vterm-previous-prompt))
+#+end_src
+
 * GPTEL
 
 ** Set openai api key
@@ -581,6 +685,15 @@ edit_buffer
 
 
 #+end_src
+* agent-shell
+#+begin_src emacs-lisp
+  (with-eval-after-load 'agent-shell
+    (setq agent-shell-anthropic-authentication
+          (agent-shell-anthropic-make-authentication :login t))
+
+    (global-set-key (kbd "C-x C-a") 'agent-shell))
+#+end_src
+
 * Programming
 ** General
 *** Compilation Mode
@@ -772,7 +885,7 @@ Use graphql-mode for graphql files
   (add-to-list 'auto-mode-alist '("\\.ex\\'" . elixir-ts-mode))
   (add-to-list 'auto-mode-alist '("\\.exs\\'" . elixir-ts-mode))
 
-  (add-to-list 'eglot-server-programs '(elixir-ts-mode "~/.emacs.d/language-servers/elixir-ls-v0/language_server.sh"))
+  (add-to-list 'eglot-server-programs '(elixir-ts-mode "~/.emacs.d/language-servers/elixir/language_server.sh"))
   (add-hook 'elixir-ts-mode-hook 'eglot-ensure)
 
 #+end_src
