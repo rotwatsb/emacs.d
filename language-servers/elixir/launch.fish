@@ -22,7 +22,16 @@ function export_stdlib_path
   set -l current_dir (pwd)
 
   set -l which_elixir_expr $argv[1]
-  set -gx ELX_STDLIB_PATH (readlink_f (eval $which_elixir_expr) | string replace -r '(.*)\/bin\/elixir' '$1')
+  # Separate evaluation from readlink_f call to avoid infinite loop
+  # when elixir is not found
+  set -l stdlib_path (eval $which_elixir_expr 2>/dev/null)
+
+  # Only proceed if elixir was found
+  if test -n "$stdlib_path"
+    set -l stdlib_real_path (readlink_f "$stdlib_path")
+    set -gx ELX_STDLIB_PATH (echo $stdlib_real_path | string replace -r '(.*)\/bin\/elixir' '$1')
+  end
+
   # readlink_f changes the current directory (since fish doesn't have
   # subshells), so it needs to be restored.
   cd $current_dir
@@ -109,6 +118,10 @@ if test -z "$ELS_INSTALL_PREFIX"
 else
   set scriptpath $ELS_INSTALL_PREFIX
 end
+
+# Unset MIX_OS_DEPS_COMPILE_PARTITION_COUNT as it pollutes stdout
+# breaking LSP protocol. See https://github.com/elixir-lsp/elixir-ls/issues/1195
+set -e MIX_OS_DEPS_COMPILE_PARTITION_COUNT
 
 set -x MIX_ENV prod
 # Mix.install prints to stdout and reads from stdin

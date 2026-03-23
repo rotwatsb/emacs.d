@@ -1,16 +1,20 @@
 @echo off & setlocal enabledelayedexpansion
 
-SET ELS_MODE=debug_adapter
+SET ELS_MODE=language_server
 
 IF EXIST "%APPDATA%\elixir_ls\setup.bat" (
     ECHO "" | CALL "%APPDATA%\elixir_ls\setup.bat" > nul
     IF %ERRORLEVEL% NEQ 0 EXIT 1
 )
 
+@REM Unset MIX_OS_DEPS_COMPILE_PARTITION_COUNT as it pollutes stdout
+@REM breaking LSP protocol. See https://github.com/elixir-lsp/elixir-ls/issues/1195
+SET MIX_OS_DEPS_COMPILE_PARTITION_COUNT=
+
 SET MIX_ENV=prod
 @REM pipe echo to avoid passing protocol messages to quiet install command
-@REM intercept stdout
+@REM intercept stdout and stderr
 @REM elixir is a batch script and needs to be called
-ECHO "" | CALL elixir "%~dp0quiet_install.exs" > nul
+ECHO "" | CALL elixir "%~dp0quiet_install.exs" >nul
 IF %ERRORLEVEL% NEQ 0 EXIT 1
 elixir %ELS_ELIXIR_OPTS% --erl "-kernel standard_io_encoding latin1 +sbwt none +sbwtdcpu none +sbwtdio none %ELS_ERL_OPTS%" "%~dp0launch.exs"
