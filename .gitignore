@@ -21,3 +21,4 @@ org-persist
 .org-id-locations
 .DS_Store
 *.dylib
+/.agent-shell/
