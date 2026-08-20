@@ -687,19 +687,45 @@ edit_buffer
 #+end_src
 * agent-shell
 #+begin_src emacs-lisp
+  (defun my-agent-shell-cycle (direction)
+    "Cycle DIRECTION (+1 or -1) through agent-shell buffers in the current project."
+    (let* ((shells (sort (agent-shell-project-buffers)
+                         (lambda (a b) (string< (buffer-name a) (buffer-name b)))))
+           (len (length shells)))
+      (cond
+       ((zerop len)
+        (message "No agent-shell buffers in this project."))
+       ((= len 1)
+        (switch-to-buffer (car shells)))
+       (t
+        (let* ((idx (cl-position (current-buffer) shells))
+               (next-idx (if idx
+                             (mod (+ idx direction) len)
+                           (if (> direction 0) 0 (1- len)))))
+          (switch-to-buffer (nth next-idx shells)))))))
+
+  (defun my-agent-shell-cycle-next ()
+    (interactive)
+    (my-agent-shell-cycle 1))
+
+  (defun my-agent-shell-cycle-prev ()
+    (interactive)
+    (my-agent-shell-cycle -1))
+
   (with-eval-after-load 'agent-shell
     (setq agent-shell-anthropic-authentication
           (agent-shell-anthropic-make-authentication :login t))
-
     (global-set-key (kbd "C-x C-a") 'agent-shell)
     (define-key agent-shell-mode-map (kbd "M-p") #'agent-shell-previous-item)
-    (define-key agent-shell-mode-map (kbd "M-n") #'agent-shell-next-item))
+    (define-key agent-shell-mode-map (kbd "M-n") #'agent-shell-next-item)
+    (define-key agent-shell-mode-map (kbd "C-c C-n") #'my-agent-shell-cycle-next)
+    (define-key agent-shell-mode-map (kbd "C-c C-p") #'my-agent-shell-cycle-prev))
 
   (setq agent-shell-mcp-servers
-      '(((name . "docker-toolkit")
-         (command . "docker")
-         (args . ("mcp" "gateway" "run"))
-         (env . ()))))
+        '(((name . "docker-toolkit")
+           (command . "docker")
+           (args . ("mcp" "gateway" "run"))
+           (env . ()))))
 #+end_src
 
 * Programming
@@ -738,7 +764,8 @@ Tell compilation mode how to handle eslint output in compilation mode.
              (eslint-line "^[[[[:space:]]]]+\\([0-9]+\\):\\([0-9]+\\)[[[[:space:]]]]+\\(?:\\(warning\\)\\|\\(info\\)\\).*$" nil 1 2 (3 . 4))
              (eslint-file "^\\(/.+\\.[a-z]+\\)$" 1 nil nil)
              (my-typescript-tsc-pretty "^\\\s+\\(.*\\):\\([0-9]+\\):\\([0-9]+\\).*" 1 2 3 2)
-             (jest-file-line "^[[[[:space:]]]]+at[^()]*(\\(.+\\):\\([0-9]+\\):\\([0-9]+\\))$" (1 ("%s" default-directory)) 2 3 2))))
+             (elixir-mix "^[[:space:]]*└─[[:space:]]+\\(.*\\.ex\\):\\([0-9]+\\):\\([0-9]+\\)" 1 2 3 1)
+             (elixir-mix-error "^\\*\\* .+ on \\(\\(.*\\.ex\\):\\([0-9]+\\):\\([0-9]+\\)\\):" 2 3 4 nil 1))))
       (dolist (pat compilation-patterns)
         (add-compilation-pattern pat))))
 #+end_src
